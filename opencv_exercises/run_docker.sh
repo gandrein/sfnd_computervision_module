@@ -13,6 +13,8 @@ IMAGE_NAME=hrilab/ubuntu-18.04-opencv4-devel
 
 #IMAGE_NAME=$1 && shift 1
 
+BASEDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
 THIS_HOST=`hostname`
 docker_run_cmd="docker run --rm"
 
@@ -25,7 +27,7 @@ $(echo $docker_run_cmd) \
     -e "QT_X11_NO_MITSHM=1" \
     -v /tmp/.X11-unix:/tmp/.X11-unix:rw \
     -v $HOME/.Xauthority:/root/.Xauthority -e XAUTHORITY=/root/.Xauthority \
-    -v $(pwd):/home/docker/code \
+    -v $BASEDIR:/home/docker/code \
     -v $HOME/.clang-format-v6:/home/docker/.clang-format \
     -v $HOME/.bash_aliases:/home/docker/.bash_aliases \
     -v $HOME/.bashrc:/home/docker/.bashrc \
