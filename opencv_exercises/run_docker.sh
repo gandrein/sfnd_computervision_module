@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
-IMAGE_NAME=hrilab/ubuntu-18.04-opencv4-devel
-
+IMAGE_NAME=codookie/ubuntu-18.04-opencv4-devel
 
 ## Check args
 #if [ "$#" -lt 1 ]; then
