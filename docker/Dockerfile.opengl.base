@@ -1,0 +1,16 @@
+FROM ubuntu:18.04 as base
+
+MAINTAINER Andrei Gherghescu <andrei.gherghescu@esa.int>
+
+RUN apt-get update -y && apt-get install -y locales
+
+RUN locale-gen en_US.UTF-8
+ENV LANG en_US.UTF-8
+
+FROM nvidia/opengl:1.0-glvnd-devel-ubuntu18.04 as nvidia
+FROM base
+
+COPY --from=nvidia /usr/local /usr/local
+COPY --from=nvidia /etc/ld.so.conf.d/nvidia.conf /etc/ld.so.conf.d/nvidia.conf
+
+ENV NVIDIA_VISIBLE_DEVICES=all NVIDIA_DRIVER_CAPABILITIES=all

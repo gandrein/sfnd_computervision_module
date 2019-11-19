@@ -1,0 +1,13 @@
+#Ignore the build directory
+build/
+
+# Submission archives
+*.zip
+
+# Include some of the customizations for the vscode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace

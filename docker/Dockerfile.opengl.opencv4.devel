@@ -1,0 +1,65 @@
+FROM hrilab/ubuntu-18.04-opengl-base
+
+MAINTAINER Andrei Gherghescu <andrei.gherghescu@esa.int>
+
+# Define build arguments
+ARG USER_ID=1000
+ARG GROUP_ID=1000
+ARG USERNAME=docker
+
+# Setup environment
+RUN locale-gen en_US.UTF-8
+ENV LANG en_US.UTF-8
+
+RUN apt-get update -y && apt-get install -y \
+    apt-utils mesa-utils iproute2 sudo \
+    git unzip tree vim clang-format \
+    build-essential cmake autoconf libtool intltool \
+    libglib2.0-dev libgtk-3-dev gtk-doc-tools libxml2-dev \
+    libusb-1.0-0-dev libpng-dev libjpeg-dev libnotify-dev \
+    libatlas-base-dev liblapack-dev libblas-dev \
+    libopenblas-dev libopenblas-base liblapacke-dev \
+    libavcodec-dev libavformat-dev libavutil-dev libswscale-dev libavresample-dev \
+    libgstreamer1.0-0 \
+    libgstreamer1.0-dev \
+    gstreamer1.0-plugins-base \
+    libgstreamer-plugins-base1.0-dev \
+    gstreamer1.0-plugins-good \
+    gstreamer1.0-plugins-bad \
+    gstreamer1.0-plugins-ugly \
+    gstreamer1.0-liba \
+    gstreamer1.0-doc \
+    gstreamer1.0-tools \
+    gstreamer1.0-x \
+    gstreamer1.0-gl \
+    gstreamer1.0-gtk3 \
+    gstreamer1.0-qt5 \
+&& rm -rf /var/lib/apt/lists/*
+
+# Setup user
+RUN mkdir -p /home/${USERNAME} && \
+    groupadd ${USERNAME} -g ${GROUP_ID} && \
+    echo "${USERNAME}:x:${USER_ID}:${GROUP_ID}:${USERNAME},,,:/home/${USERNAME}:/bin/bash" >> /etc/passwd && \
+    echo "${USERNAME}:x:${USER_ID}:" >> /etc/group && \
+    echo "${USERNAME} ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/${USERNAME} && \
+    chmod 0440 /etc/sudoers.d/${USERNAME} && \
+    chown ${USER_ID}:${GROUP_ID} -R /home/${USERNAME}
+
+
+USER $USERNAME
+ENV HOME /home/${USERNAME}
+
+# Build opencv 4.1.2
+RUN cd $HOME/repos \
+  && git clone --progress --verbose https://github.com/opencv/opencv \
+  && cd opencv && git checkout 4.1.2 \
+  && mkdir build && cd build \
+  && cmake -D CMAKE_BUILD_TYPE=RELEASE -D INSTALL_C_EXAMPLES=OFF -D WITH_GSTREAMER=ON -D WITH_FFMPEG=ON \
+  -D BUILD_EXAMPLES=ON .. \
+  && make -j4 \
+  && sudo make install
+
+
+WORKDIR $HOME
+
+ENTRYPOINT ["/bin/bash"]
