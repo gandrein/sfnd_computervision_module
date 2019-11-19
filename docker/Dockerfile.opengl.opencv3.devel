@@ -13,7 +13,7 @@ ENV LANG en_US.UTF-8
 
 RUN apt-get update -y && apt-get install -y \
     apt-utils mesa-utils iproute2 sudo \
-    git unzip tree vim \
+    git unzip tree vim clang-format \
     build-essential cmake autoconf libtool intltool \
     libglib2.0-dev libgtk-3-dev gtk-doc-tools libxml2-dev \
     libusb-1.0-0-dev libpng-dev libjpeg-dev libnotify-dev \
@@ -50,7 +50,7 @@ USER $USERNAME
 ENV HOME /home/${USERNAME}
 
 # Build opencv 3.4.8
-RUN cd $HOME/repos \
+RUN mkdir $HOME/repos && cd $HOME/repos \
   && git clone --progress --verbose https://github.com/opencv/opencv \
   && cd opencv && git checkout 3.4.8 \
   && mkdir build && cd build \

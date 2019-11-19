@@ -50,7 +50,7 @@ USER $USERNAME
 ENV HOME /home/${USERNAME}
 
 # Build opencv 4.1.2
-RUN cd $HOME/repos \
+RUN mkdir $HOME/repos && cd $HOME/repos \
   && git clone --progress --verbose https://github.com/opencv/opencv \
   && cd opencv && git checkout 4.1.2 \
   && mkdir build && cd build \
