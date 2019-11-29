@@ -3,6 +3,8 @@ build/
 
 # Submission archives
 *.zip
+*.tar
+*.tar.gz
 
 # Include some of the customizations for the vscode
 .vscode/*
