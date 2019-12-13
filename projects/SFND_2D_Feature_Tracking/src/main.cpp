@@ -58,13 +58,55 @@ void pushToBuffer(std::vector<DataFrame> &buffer, DataFrame &newFrame) {
   cout << "#1 : LOAD IMAGE INTO BUFFER done" << endl;
 }
 
+bool isInsideROI(cv::KeyPoint &kpt, cv::Rect &rectangle) {
+  cv::Point2f point = kpt.pt;
+  // std::cout << "Point has x: " << keypoint.x << ", y:" << keypoint.y << std::endl;
+  cv::Point2f topLeft(rectangle.x, rectangle.y);
+  cv::Point2f topRight(rectangle.x + rectangle.width, rectangle.y);
+  cv::Point2f bottomLeft(rectangle.x, rectangle.y + rectangle.height);
+  cv::Point2f bottomRight(rectangle.x + rectangle.width, rectangle.y + rectangle.height);
+
+  if (point.x >= topLeft.x && point.x <= topRight.x && point.y >= topLeft.y && point.y <= bottomLeft.y) {
+    return true;
+  }
+  return false;
+}
+
+void filterKeypointsROI(cv::Rect &rectangle, std::vector<cv::KeyPoint> &keypoints) {
+  auto newEnd = std::remove_if(keypoints.begin(), keypoints.end(),
+                               [&rectangle](cv::KeyPoint kpt) { return !isInsideROI(kpt, rectangle); });
+  keypoints.erase(newEnd, keypoints.end());
+}
+
+void filterKeypointsNumber(DetectorType detector, std::vector<cv::KeyPoint> &keypoints, size_t maxNumber) {
+  switch (detector) {
+    case DetectorType::SHITOMASI:
+    case DetectorType::HARRIS:
+      // there is no response info, so keep the first 50 as they are sorted in descending quality order
+      keypoints.erase(keypoints.begin() + maxNumber, keypoints.end());
+      break;
+    case DetectorType::FAST:
+    case DetectorType::BRISK:
+    case DetectorType::ORB:
+    case DetectorType::AKAZE:
+    case DetectorType::SIFT:
+      cv::KeyPointsFilter::retainBest(keypoints, maxNumber);
+      break;
+    default:
+      std::cout << "Unknown detector method!" << std::endl;
+      break;
+  }
+  cout << " NOTE: Keypoints have been limited!" << endl;
+}
+
 /* MAIN PROGRAM */
 int main(int argc, const char *argv[]) {
   std::string dataPath;
-  int detectorType = static_cast<int>(DetectorType::SHITOMASI);  // default SHITOMASI
-
   // Defaults
   bool visualizeResult = false;  // visualize results
+  bool applyROI = false;
+  bool limitMaxKeypoints = false;
+  int detectorType = static_cast<int>(DetectorType::SHITOMASI);  // default SHITOMASI
 
   // Command line arguments are used for debugging
   try {
@@ -77,6 +119,13 @@ int main(int argc, const char *argv[]) {
     TCLAP::ValueArg<uint> dType("", "dtype", "Keypoint detector type", 0, detectorType, "int");
     cmdlineArg.add(dType);
 
+    TCLAP::ValueArg<bool> useROI("", "roi", "Apply an ROI on preceeding vehicle", false, applyROI, "bool");
+    cmdlineArg.add(useROI);
+
+    TCLAP::ValueArg<bool> maxNumKeypoints("", "max-keypts", "Limit the number of keypoints (for debugging)", false,
+                                          limitMaxKeypoints, "bool");
+    cmdlineArg.add(maxNumKeypoints);
+
     TCLAP::ValueArg<bool> visualize("", "visualize", "Show results in OpenCV window", false, visualizeResult, "bool");
     cmdlineArg.add(visualize);
 
@@ -85,6 +134,8 @@ int main(int argc, const char *argv[]) {
     dataPath = dir.getValue();
     visualizeResult = visualize.getValue();
     detectorType = dType.getValue();
+    applyROI = useROI.getValue();
+    limitMaxKeypoints = maxNumKeypoints.getValue();
 
   } catch (TCLAP::ArgException &e) {
     std::cerr << "error: " << e.error() << " for arg " << e.argId() << std::endl;
@@ -128,51 +179,45 @@ int main(int argc, const char *argv[]) {
     DetectorType detector = static_cast<DetectorType>(detectorType);
     detectKeypoints(detector, keypoints, imgGray, visualizeResult);
 
-    //// STUDENT ASSIGNMENT
-    //// TASK MP.3 -> only keep keypoints on the preceding vehicle
+    /*
+     * TASK MP.3 -> Apply box ROI (and reduce number of keypoints for debugging)
+     */
+    if (applyROI) {
+      //  -> only keep keypoints on the preceding vehicle
+      cv::Rect vehicleRect(535, 180, 180, 150);
+      filterKeypointsROI(vehicleRect, keypoints);
 
-    // only keep keypoints on the preceding vehicle
-    bool bFocusOnVehicle = true;
-    cv::Rect vehicleRect(535, 180, 180, 150);
-    if (bFocusOnVehicle) {
-      // ...
+      // Debug section ....
+      /*
+      for (auto it = keypoints.begin(); it != keypoints.end(); it++) {
+        cv::Point2f pt = (*it).pt;
+        if (isInsideROI(pt, vehicleRect)) {
+          imgGray.at<unsigned char>(pt.y, pt.x) = 255;
+        }
+      }
+      cv::namedWindow("testROI", 1);  // create window
+      cv::imshow("testROI", imgGray);
+      while ((cv::waitKey() & 0xEFFFFF) != 27) {
+        continue;
+      }  // wait for keyboard input before continuing
+      */
     }
 
-    //// EOF STUDENT ASSIGNMENT
-
     // optional : limit number of keypoints (helpful for debugging and learning)
-    bool bLimitKpts = false;
-    if (bLimitKpts) {
+    if (limitMaxKeypoints) {
       int maxKeypoints = 50;
-
-      switch (detector) {
-        case DetectorType::SHITOMASI:
-          // there is no response info, so keep the first 50 as they are sorted in descending quality order
-          keypoints.erase(keypoints.begin() + maxKeypoints, keypoints.end());
-        case DetectorType::HARRIS:
-        case DetectorType::FAST:
-        case DetectorType::BRISK:
-        case DetectorType::ORB:
-        case DetectorType::AKAZE:
-        case DetectorType::SIFT:
-          break;
-        default:
-          std::cout << "Unknown detector method!" << std::endl;
-          break;
-      }
-      cv::KeyPointsFilter::retainBest(keypoints, maxKeypoints);
-      cout << " NOTE: Keypoints have been limited!" << endl;
+      filterKeypointsNumber(detector, keypoints, maxKeypoints);
     }
 
     // push keypoints and descriptor for current frame to end of data buffer
     (dataBuffer.end() - 1)->keypoints = keypoints;
     cout << "#2 : DETECT KEYPOINTS done" << endl;
 
-    /* EXTRACT KEYPOINT DESCRIPTORS */
-
-    //// STUDENT ASSIGNMENT
-    //// TASK MP.4 -> add the following descriptors in file matching2D.cpp and enable string-based selection based on
-    /// descriptorType / -> BRIEF, ORB, FREAK, AKAZE, SIFT
+    /*
+     * TASK MP.4 -> EXTRACT KEYPOINT DESCRIPTORS
+     * -> add the following descriptors in file matching2D.cpp and enable string-based selection based on
+     * -> BRIEF, ORB, FREAK, AKAZE, SIFT
+     */
 
     cv::Mat descriptors;
     string descriptorType = "BRISK";  // BRIEF, ORB, FREAK, AKAZE, SIFT

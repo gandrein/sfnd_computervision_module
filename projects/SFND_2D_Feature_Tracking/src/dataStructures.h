@@ -4,7 +4,9 @@
 #include <opencv2/core.hpp>
 #include <vector>
 
-enum DetectorType { SHITOMASI = 0, HARRIS = 1, AKAZE = 2, BRISK = 3, FAST = 4, ORB = 5, SIFT = 6 };
+enum class DetectorType { SHITOMASI = 0, HARRIS = 1, AKAZE = 2, BRISK = 3, FAST = 4, ORB = 5, SIFT = 6 };
+
+enum class DescriptorType { BRISK = 0, AKAZE = 1, BRIEF = 2, FREAK = 3, ORB = 4, SIFT = 5 };
 
 struct DataFrame {  // represents the available sensor information at the same time instance
 
