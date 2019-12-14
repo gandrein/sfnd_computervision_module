@@ -78,23 +78,17 @@ void filterKeypointsROI(cv::Rect &rectangle, std::vector<cv::KeyPoint> &keypoint
   keypoints.erase(newEnd, keypoints.end());
 }
 
-void filterKeypointsNumber(DetectorType detector, std::vector<cv::KeyPoint> &keypoints, size_t maxNumber) {
-  switch (detector) {
-    case DetectorType::SHITOMASI:
-    case DetectorType::HARRIS:
-      // there is no response info, so keep the first 50 as they are sorted in descending quality order
-      keypoints.erase(keypoints.begin() + maxNumber, keypoints.end());
-      break;
-    case DetectorType::FAST:
-    case DetectorType::BRISK:
-    case DetectorType::ORB:
-    case DetectorType::AKAZE:
-    case DetectorType::SIFT:
-      cv::KeyPointsFilter::retainBest(keypoints, maxNumber);
-      break;
-    default:
-      std::cout << "Unknown detector method!" << std::endl;
-      break;
+void filterKeypointsNumber(DetectorMethod detector, std::vector<cv::KeyPoint> &keypoints, size_t maxNumber) {
+  if (detector == DetectorMethod::SHITOMASI || detector == DetectorMethod::HARRIS) {
+    // there is no response info, so keep the first 50 as they are sorted in descending quality order
+    keypoints.erase(keypoints.begin() + maxNumber, keypoints.end());
+  } else {
+    //   DetectorMethod::FAST:
+    //   DetectorMethod::BRISK:
+    //   DetectorMethod::ORB:
+    //   DetectorMethod::AKAZE:
+    //   DetectorMethod::SIFT:
+    cv::KeyPointsFilter::retainBest(keypoints, maxNumber);
   }
   cout << " NOTE: Keypoints have been limited!" << endl;
 }
@@ -105,8 +99,13 @@ int main(int argc, const char *argv[]) {
   // Defaults
   bool visualizeResult = false;  // visualize results
   bool applyROI = false;
-  bool limitMaxKeypoints = false;
-  int detectorType = static_cast<int>(DetectorType::SHITOMASI);  // default SHITOMASI
+  bool crossCheckBruteForce = false;
+  int maxKeypoints = 0;
+  int detectorSelected = static_cast<int>(DetectorMethod::SHITOMASI);        // default
+  int descriptorSelected = static_cast<int>(DescriptorMethod::BRISK);        // default
+  int descriptorEncodingSel = static_cast<int>(DescriptorEncoding::BINARY);  // default
+  int matcherSelected = static_cast<int>(MatcherMethod::BRUTE_FORCE);        // default
+  int nnMatcherSelected = static_cast<int>(NeighborSelectorMethod::NN);      // default
 
   // Command line arguments are used for debugging
   try {
@@ -116,14 +115,35 @@ int main(int argc, const char *argv[]) {
                                      "../images/", "string");
     cmdlineArg.add(dir);
 
-    TCLAP::ValueArg<uint> dType("", "dtype", "Keypoint detector type", 0, detectorType, "int");
-    cmdlineArg.add(dType);
+    TCLAP::ValueArg<int> detType("", "detector", "Keypoint detector type", 0, detectorSelected, "int");
+    cmdlineArg.add(detType);
+
+    TCLAP::ValueArg<int> descType("", "descriptor", "Keypoint descriptor type", 0, descriptorSelected, "int");
+    cmdlineArg.add(descType);
+
+    TCLAP::ValueArg<int> matcherType("", "matcher", "Descriptor matcher method", 0, matcherSelected, "int");
+    cmdlineArg.add(matcherType);
+
+    TCLAP::ValueArg<int> nnType("", "matcher-selector", "Keypoint selector method for matchers", 0, nnMatcherSelected,
+                                "int");
+    cmdlineArg.add(nnType);
+
+    TCLAP::ValueArg<int> descrEncoding("", "descriptor-encode", "Encoding of descriptor", 0, descriptorEncodingSel,
+                                       "int");
+    cmdlineArg.add(descrEncoding);
 
     TCLAP::ValueArg<bool> useROI("", "roi", "Apply an ROI on preceeding vehicle", false, applyROI, "bool");
     cmdlineArg.add(useROI);
 
-    TCLAP::ValueArg<bool> maxNumKeypoints("", "max-keypts", "Limit the number of keypoints (for debugging)", false,
-                                          limitMaxKeypoints, "bool");
+    TCLAP::ValueArg<bool> useCrossCheck(
+        "", "cross-check",
+        "Cross-Check matching between source and destination images. Used only for BRUTE_FORCE matcher.", false,
+        crossCheckBruteForce, "bool");
+    cmdlineArg.add(useCrossCheck);
+
+    TCLAP::ValueArg<int> maxNumKeypoints("", "max-keypts",
+                                         "Limit the number of keypoints (for debugging) to provided value", false,
+                                         maxKeypoints, "int");
     cmdlineArg.add(maxNumKeypoints);
 
     TCLAP::ValueArg<bool> visualize("", "visualize", "Show results in OpenCV window", false, visualizeResult, "bool");
@@ -133,9 +153,23 @@ int main(int argc, const char *argv[]) {
 
     dataPath = dir.getValue();
     visualizeResult = visualize.getValue();
-    detectorType = dType.getValue();
+
     applyROI = useROI.getValue();
-    limitMaxKeypoints = maxNumKeypoints.getValue();
+    maxKeypoints = maxNumKeypoints.getValue();
+
+    detectorSelected = detType.getValue();
+    descriptorSelected = descType.getValue();
+    descriptorEncodingSel = descrEncoding.getValue();
+    matcherSelected = matcherType.getValue();
+    nnMatcherSelected = nnType.getValue();
+    crossCheckBruteForce = useCrossCheck.getValue();
+
+    // Check AKAZE descriptor/detector combination
+    if (descriptorSelected == static_cast<int>(DescriptorMethod::AKAZE) &&
+        detectorSelected != static_cast<int>(DetectorMethod::AKAZE)) {
+      std::cerr << "AKAZE descriptor type is allowed only with AKAZE/KAZE keypoints. Exiting ..." << std::endl;
+      exit(EXIT_FAILURE);
+    }
 
   } catch (TCLAP::ArgException &e) {
     std::cerr << "error: " << e.error() << " for arg " << e.argId() << std::endl;
@@ -176,7 +210,7 @@ int main(int argc, const char *argv[]) {
      */
     // extract 2D keypoints from current image
     std::vector<cv::KeyPoint> keypoints;  // create empty feature list for current image
-    DetectorType detector = static_cast<DetectorType>(detectorType);
+    DetectorMethod detector = static_cast<DetectorMethod>(detectorSelected);
     detectKeypoints(detector, keypoints, imgGray, visualizeResult);
 
     /*
@@ -204,11 +238,9 @@ int main(int argc, const char *argv[]) {
     }
 
     // optional : limit number of keypoints (helpful for debugging and learning)
-    if (limitMaxKeypoints) {
-      int maxKeypoints = 50;
+    if (maxKeypoints != 0) {
       filterKeypointsNumber(detector, keypoints, maxKeypoints);
     }
-
     // push keypoints and descriptor for current frame to end of data buffer
     (dataBuffer.end() - 1)->keypoints = keypoints;
     cout << "#2 : DETECT KEYPOINTS done" << endl;
@@ -220,39 +252,25 @@ int main(int argc, const char *argv[]) {
      */
 
     cv::Mat descriptors;
-    string descriptorType = "BRISK";  // BRIEF, ORB, FREAK, AKAZE, SIFT
-    descKeypoints((dataBuffer.end() - 1)->keypoints, (dataBuffer.end() - 1)->cameraImg, descriptors, descriptorType);
-    //// EOF STUDENT ASSIGNMENT
-
+    DescriptorMethod descriptorMethod = static_cast<DescriptorMethod>(descriptorSelected);
+    descKeypoints(descriptorMethod, (dataBuffer.end() - 1)->keypoints, (dataBuffer.end() - 1)->cameraImg, descriptors);
     // push descriptors for current frame to end of data buffer
     (dataBuffer.end() - 1)->descriptors = descriptors;
 
-    cout << "#3 : EXTRACT DESCRIPTORS done" << endl;
-
+    /* MATCH KEYPOINT DESCRIPTORS */
     if (dataBuffer.size() > 1)  // wait until at least two images have been processed
     {
-      /* MATCH KEYPOINT DESCRIPTORS */
-
-      vector<cv::DMatch> matches;
-      string matcherType = "MAT_BF";         // MAT_BF, MAT_FLANN
-      string descriptorType = "DES_BINARY";  // DES_BINARY, DES_HOG
-      string selectorType = "SEL_NN";        // SEL_NN, SEL_KNN
-
-      //// STUDENT ASSIGNMENT
-      //// TASK MP.5 -> add FLANN matching in file matching2D.cpp
-      //// TASK MP.6 -> add KNN match selection and perform descriptor distance ratio filtering with t=0.8 in file
-      /// matching2D.cpp
+      std::vector<cv::DMatch> matches;
+      MatcherMethod matcherMethod = static_cast<MatcherMethod>(matcherSelected);
+      DescriptorEncoding descriptorEncoding = static_cast<DescriptorEncoding>(descriptorEncodingSel);
+      NeighborSelectorMethod nnSelector = static_cast<NeighborSelectorMethod>(nnMatcherSelected);
 
       matchDescriptors((dataBuffer.end() - 2)->keypoints, (dataBuffer.end() - 1)->keypoints,
                        (dataBuffer.end() - 2)->descriptors, (dataBuffer.end() - 1)->descriptors, matches,
-                       descriptorType, matcherType, selectorType);
-
-      //// EOF STUDENT ASSIGNMENT
+                       descriptorMethod, descriptorEncoding, matcherMethod, nnSelector, crossCheckBruteForce);
 
       // store matches in current data frame
       (dataBuffer.end() - 1)->kptMatches = matches;
-
-      cout << "#4 : MATCH KEYPOINT DESCRIPTORS done" << endl;
 
       // visualize matches between current and previous image
       visualizeResult = true;

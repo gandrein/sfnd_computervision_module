@@ -18,15 +18,22 @@
 
 #include "dataStructures.h"
 
-void detectKeypoints(DetectorType detector, std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool visualize = false);
-void detectKeypointsClassic(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img);
+void detectKeypoints(DetectorMethod detector, std::vector<cv::KeyPoint> &keypoints, cv::Mat &img,
+                     bool visualize = false);
+void detectKeypointsClassic(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool useHarris);
 void detKeypointsHarris(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img);
 void detKeypointsShiTomasi(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img);
-void detKeypointsModern(DetectorType detector, std::vector<cv::KeyPoint> &keypoints, cv::Mat &img);
-void descKeypoints(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, cv::Mat &descriptors,
-                   std::string descriptorType);
+void detKeypointsModern(DetectorMethod detector, std::vector<cv::KeyPoint> &keypoints, cv::Mat &img);
+
+void descKeypoints(DescriptorMethod descriptor, std::vector<cv::KeyPoint> &keypoints, cv::Mat &img,
+                   cv::Mat &descriptors);
+
 void matchDescriptors(std::vector<cv::KeyPoint> &kPtsSource, std::vector<cv::KeyPoint> &kPtsRef, cv::Mat &descSource,
-                      cv::Mat &descRef, std::vector<cv::DMatch> &matches, std::string descriptorType,
-                      std::string matcherType, std::string selectorType);
+                      cv::Mat &descRef, std::vector<cv::DMatch> &matches, DescriptorMethod descriptorMethod,
+                      DescriptorEncoding descrEncoding, MatcherMethod matcherMethod, NeighborSelectorMethod nnSelector,
+                      bool crossCheck);
+int selectNormTypeMatcher(DescriptorMethod descriptorMethod, DescriptorEncoding descrEncoding);
+void runKNN(cv::Mat &descSource, cv::Mat &descRef, std::vector<cv::DMatch> &matches,
+            cv::Ptr<cv::DescriptorMatcher> &matcher, int desiredNumMatches, double minDescriptorDistRatio);
 
 #endif /* matching2D_hpp */
