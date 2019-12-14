@@ -18,22 +18,25 @@
 
 #include "dataStructures.h"
 
-void detectKeypoints(DetectorMethod detector, std::vector<cv::KeyPoint> &keypoints, cv::Mat &img,
-                     bool visualize = false);
-void detectKeypointsClassic(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool useHarris);
-void detKeypointsHarris(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img);
-void detKeypointsShiTomasi(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img);
-void detKeypointsModern(DetectorMethod detector, std::vector<cv::KeyPoint> &keypoints, cv::Mat &img);
+double detectKeypoints(DetectorMethod detector, std::vector<cv::KeyPoint> &keypoints, cv::Mat &img,
+                       bool visualize = false);
+double detectKeypointsClassic(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool useHarris);
+double detKeypointsHarris(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img);
+double detKeypointsShiTomasi(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img);
+double detKeypointsModern(DetectorMethod detector, std::vector<cv::KeyPoint> &keypoints, cv::Mat &img);
 
-void descKeypoints(DescriptorMethod descriptor, std::vector<cv::KeyPoint> &keypoints, cv::Mat &img,
-                   cv::Mat &descriptors);
+double descKeypoints(DescriptorMethod descriptor, std::vector<cv::KeyPoint> &keypoints, cv::Mat &img,
+                     cv::Mat &descriptors);
 
-void matchDescriptors(std::vector<cv::KeyPoint> &kPtsSource, std::vector<cv::KeyPoint> &kPtsRef, cv::Mat &descSource,
-                      cv::Mat &descRef, std::vector<cv::DMatch> &matches, DescriptorMethod descriptorMethod,
-                      DescriptorEncoding descrEncoding, MatcherMethod matcherMethod, NeighborSelectorMethod nnSelector,
-                      bool crossCheck);
+double matchDescriptors(std::vector<cv::KeyPoint> &kPtsSource, std::vector<cv::KeyPoint> &kPtsRef, cv::Mat &descSource,
+                        cv::Mat &descRef, std::vector<cv::DMatch> &matches, DescriptorMethod descriptorMethod,
+                        DescriptorEncoding descrEncoding, MatcherMethod matcherMethod,
+                        NeighborSelectorMethod nnSelector, bool crossCheck);
 int selectNormTypeMatcher(DescriptorMethod descriptorMethod, DescriptorEncoding descrEncoding);
-void runKNN(cv::Mat &descSource, cv::Mat &descRef, std::vector<cv::DMatch> &matches,
-            cv::Ptr<cv::DescriptorMatcher> &matcher, int desiredNumMatches, double minDescriptorDistRatio);
+double runKNN(cv::Mat &descSource, cv::Mat &descRef, std::vector<cv::DMatch> &matches,
+              cv::Ptr<cv::DescriptorMatcher> &matcher, int desiredNumMatches, double minDescriptorDistRatio);
+
+std::string DetectorMethodToString(int value);
+std::string DescriptorMethodToString(int value);
 
 #endif /* matching2D_hpp */

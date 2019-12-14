@@ -16,6 +16,6 @@ find_package(OpenCV 4.1 REQUIRED)
 add_definitions(${OpenCV_DEFINITIONS})
 
 # Executable for create matrix exercise
-add_executable (2D_feature_tracking src/matching2D.cpp src/main.cpp)
+add_executable (2D_feature_tracking src/matching2D.cpp src/main.cpp src/utils.cpp)
 target_link_libraries (2D_feature_tracking ${OpenCV_LIBRARIES})
 target_include_directories(2D_feature_tracking PRIVATE ${OpenCV_INCLUDE_DIRS} ${DEPS}/tclap-1.2.2)

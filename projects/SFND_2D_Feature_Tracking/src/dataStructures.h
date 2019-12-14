@@ -23,4 +23,19 @@ struct DataFrame {  // represents the available sensor information at the same t
   std::vector<cv::DMatch> kptMatches;   // keypoint matches between previous and current frame
 };
 
+struct DetectionResult {
+  int imageIndex = 0;
+
+  DetectorMethod detector;
+  DescriptorMethod descriptor;
+  int numKeypointsFrame = 0;
+  int numKeypointsROI = 0;
+  int numMatches = 0;
+
+  double detectionComputeTimeSec = 0;
+  double descriptorComputeTimeSec = 0;
+  double matchesComputeTimeSec = 0;
+  bool roiApplyed = false;
+};
+
 #endif /* dataStructures_h */

@@ -1,58 +1,22 @@
 #include <numeric>
+
 #include "matching2D.hpp"
+#include "utils.h"
 
 using namespace std;
 
-inline std::string DetectorMethodToString(DetectorMethod &v) {
-  switch (v) {
-    case DetectorMethod::SHITOMASI:
-      return "SHI-TOMASI";
-    case DetectorMethod::HARRIS:
-      return "HARRIS";
-    case DetectorMethod::AKAZE:
-      return "AKAZE";
-    case DetectorMethod::BRISK:
-      return "BRISK";
-    case DetectorMethod::FAST:
-      return "FAST";
-    case DetectorMethod::ORB:
-      return "ORB";
-    case DetectorMethod::SIFT:
-      return "SIFT";
-    default:
-      return "[Unknown DetectorMethod]";
-  }
-}
-
-inline std::string DescriptorMethodToString(DescriptorMethod &v) {
-  switch (v) {
-    case DescriptorMethod::BRISK:
-      return "BRISK";
-    case DescriptorMethod::AKAZE:
-      return "AKAZE";
-    case DescriptorMethod::BRIEF:
-      return "BRIEF";
-    case DescriptorMethod::FREAK:
-      return "FREAK";
-    case DescriptorMethod::ORB:
-      return "ORB";
-    case DescriptorMethod::SIFT:
-      return "SIFT";
-    default:
-      return "[Unknown DescriptorMethod]";
-  }
-}
-
-void detectKeypoints(DetectorMethod detector, std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool visualize) {
+double detectKeypoints(DetectorMethod detector, std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool visualize) {
+  double timeDetector;
+  std::cout << "#2 : DETECT KEYPOINTS" << std::endl;
   switch (detector) {
     case DetectorMethod::SHITOMASI:
-      detKeypointsShiTomasi(keypoints, img);
+      timeDetector = detKeypointsShiTomasi(keypoints, img);
       break;
     case DetectorMethod::HARRIS:
-      detKeypointsHarris(keypoints, img);
+      timeDetector = detKeypointsHarris(keypoints, img);
       break;
     default:
-      detKeypointsModern(detector, keypoints, img);
+      timeDetector = detKeypointsModern(detector, keypoints, img);
       break;
   }
   // visualize results
@@ -66,18 +30,20 @@ void detectKeypoints(DetectorMethod detector, std::vector<cv::KeyPoint> &keypoin
       continue;
     }  // wait for keyboard input before continuing
   }
+  std::cout << ">>> : DETECT KEYPOINTS done" << std::endl;
+  return timeDetector;
 }
 
 // Detect keypoints in image using the traditional Shi-Thomasi detector
-void detKeypointsShiTomasi(vector<cv::KeyPoint> &keypoints, cv::Mat &img) {
-  detectKeypointsClassic(keypoints, img, false);
+double detKeypointsShiTomasi(vector<cv::KeyPoint> &keypoints, cv::Mat &img) {
+  return detectKeypointsClassic(keypoints, img, false);
 }
 
-void detKeypointsHarris(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img) {
-  detectKeypointsClassic(keypoints, img, true);
+double detKeypointsHarris(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img) {
+  return detectKeypointsClassic(keypoints, img, true);
 }
 
-void detectKeypointsClassic(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool useHarris) {
+double detectKeypointsClassic(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool useHarris) {
   // compute detector parameters based on image size
   int blockSize =
       4;  //  size of an average block for computing a derivative covariation matrix over each pixel neighborhood
@@ -106,9 +72,10 @@ void detectKeypointsClassic(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, 
   } else {
     cout << "Shi-Tomasi detection with n=" << keypoints.size() << " keypoints in " << 1000 * t / 1.0 << " ms" << endl;
   }
+  return t;
 }
 
-void detKeypointsModern(DetectorMethod DetectorMethod, std::vector<cv::KeyPoint> &keypoints, cv::Mat &img) {
+double detKeypointsModern(DetectorMethod DetectorMethod, std::vector<cv::KeyPoint> &keypoints, cv::Mat &img) {
   cv::Ptr<cv::FeatureDetector> detector = nullptr;
   auto tick = cv::getTickCount();
   switch (DetectorMethod) {
@@ -133,19 +100,22 @@ void detKeypointsModern(DetectorMethod DetectorMethod, std::vector<cv::KeyPoint>
       break;
     default:
       std::cout << "Unknown detector method!" << std::endl;
-      return;
+      return 0.0;
   }
 
   detector->detect(img, keypoints);
   double t = static_cast<double>((cv::getTickCount() - tick)) / cv::getTickFrequency();
   std::string detectorName = DetectorMethodToString(DetectorMethod);
-  cout << detectorName << " with n= " << keypoints.size() << " keypoints in " << 1000 * t / 1.0 << " ms" << endl;
+  std::cout << detectorName << " with n= " << keypoints.size() << " keypoints in " << 1000 * t / 1.0 << " ms"
+            << std::endl;
+  return t;
 }
 
 // Use one of several types of state-of-art descriptors to uniquely identify keypoints
-void descKeypoints(DescriptorMethod descriptor, vector<cv::KeyPoint> &keypoints, cv::Mat &img, cv::Mat &descriptors) {
+double descKeypoints(DescriptorMethod descriptor, vector<cv::KeyPoint> &keypoints, cv::Mat &img, cv::Mat &descriptors) {
   // select appropriate descriptor
   cv::Ptr<cv::DescriptorExtractor> extractor;
+  std::cout << "#3 : EXTRACT DESCRIPTORS" << std::endl;
   switch (descriptor) {
     case DescriptorMethod::BRISK: {
       int threshold = 30;         // FAST/AGAST detection threshold score.
@@ -174,21 +144,23 @@ void descKeypoints(DescriptorMethod descriptor, vector<cv::KeyPoint> &keypoints,
       break;
     default:
       std::cout << "Unknown detector method!" << std::endl;
-      return;
+      return 0.0;
   }
   // perform feature description
   double t = (double)cv::getTickCount();
   extractor->compute(img, keypoints, descriptors);
-  t = ((double)cv::getTickCount() - t) / cv::getTickFrequency();
-  std::cout << DescriptorMethodToString(descriptor) << " descriptor extraction in " << 1000 * t / 1.0 << " ms" << endl;
-  std::cout << "#3 : EXTRACT DESCRIPTORS done" << endl;
+  double timeDescriptor = ((double)cv::getTickCount() - t) / cv::getTickFrequency();
+  std::cout << DescriptorMethodToString(descriptor) << " descriptor extraction in " << 1000 * timeDescriptor / 1.0
+            << " ms" << endl;
+  std::cout << ">>> : EXTRACT DESCRIPTORS done" << std::endl;
+  return timeDescriptor;
 }
 
 // Find best matches for keypoints in two camera images based on several matching methods
-void matchDescriptors(std::vector<cv::KeyPoint> &kPtsSource, std::vector<cv::KeyPoint> &kPtsRef, cv::Mat &descSource,
-                      cv::Mat &descRef, std::vector<cv::DMatch> &matches, DescriptorMethod descriptorMethod,
-                      DescriptorEncoding descrEncoding, MatcherMethod matcherMethod, NeighborSelectorMethod nnSelector,
-                      bool crossCheck) {
+double matchDescriptors(std::vector<cv::KeyPoint> &kPtsSource, std::vector<cv::KeyPoint> &kPtsRef, cv::Mat &descSource,
+                        cv::Mat &descRef, std::vector<cv::DMatch> &matches, DescriptorMethod descriptorMethod,
+                        DescriptorEncoding descrEncoding, MatcherMethod matcherMethod,
+                        NeighborSelectorMethod nnSelector, bool crossCheck) {
   // configure matcher
   cv::Ptr<cv::DescriptorMatcher> matcher;
   int normType = selectNormTypeMatcher(descriptorMethod, descrEncoding);
@@ -197,9 +169,6 @@ void matchDescriptors(std::vector<cv::KeyPoint> &kPtsSource, std::vector<cv::Key
    */
   // Select matcher method to be used
   switch (matcherMethod) {
-    case MatcherMethod::BRUTE_FORCE:
-      matcher = cv::BFMatcher::create(normType, crossCheck);
-      break;
     case MatcherMethod::FLANN: {
       if (descSource.type() != CV_32F) {
         // OpenCV bug workaround : convert binary descriptors to floating point due to
@@ -213,9 +182,12 @@ void matchDescriptors(std::vector<cv::KeyPoint> &kPtsSource, std::vector<cv::Key
       matcher = cv::DescriptorMatcher::create(cv::DescriptorMatcher::FLANNBASED);
       break;
     }
+    case MatcherMethod::BRUTE_FORCE:
+      matcher = cv::BFMatcher::create(normType, crossCheck);
+      break;
     default:
-      std::cout << "Unknown descriptor matcher method!" << std::endl;
-      return;
+      std::cout << "Unknown descriptor matcher method! Defaulting to BRUTE_FORCE" << std::endl;
+      matcher = cv::BFMatcher::create(normType, crossCheck);
   }
 
   // Perform actual matching
@@ -223,26 +195,29 @@ void matchDescriptors(std::vector<cv::KeyPoint> &kPtsSource, std::vector<cv::Key
    * TASK MP.6 -> add KNN match selection and perform descriptor distance ratio filtering
    * with t=0.8
    */
+  double timeMatching = 0.0;
   switch (nnSelector) {
     case NeighborSelectorMethod::NN: {
       double t = (double)cv::getTickCount();
       matcher->match(descSource, descRef, matches);  // Finds the best match for each descriptor in desc1
-      t = ((double)cv::getTickCount() - t) / cv::getTickFrequency();
-      std::cout << " (NN) with n=" << matches.size() << " matches in " << 1000 * t / 1.0 << " ms" << std::endl;
+      timeMatching = ((double)cv::getTickCount() - t) / cv::getTickFrequency();
+      std::cout << " (NN) with n=" << matches.size() << " matches in " << 1000 * timeMatching / 1.0 << " ms"
+                << std::endl;
       break;
     }
     case NeighborSelectorMethod::kNN: {
       // k nearest neighbors (k=2)
       int desiredNumMatches = 2;
       double minDescriptorDistRatio = 0.8;
-      runKNN(descSource, descRef, matches, matcher, desiredNumMatches, minDescriptorDistRatio);
+      timeMatching = runKNN(descSource, descRef, matches, matcher, desiredNumMatches, minDescriptorDistRatio);
 
     } break;
     default:
       std::cout << "Unknown keypoint/descriptor matching method: allowed NN/kNN only!" << std::endl;
-      return;
+      return 0.0;
   }
   std::cout << "#4 : MATCH KEYPOINT DESCRIPTORS done" << std::endl;
+  return timeMatching;
 }
 
 int selectNormTypeMatcher(DescriptorMethod descriptorMethod, DescriptorEncoding descrEncoding) {
@@ -261,17 +236,18 @@ int selectNormTypeMatcher(DescriptorMethod descriptorMethod, DescriptorEncoding 
   }
 }
 
-void runKNN(cv::Mat &descSource, cv::Mat &descRef, std::vector<cv::DMatch> &matches,
-            cv::Ptr<cv::DescriptorMatcher> &matcher, int desiredNumMatches, double minDescriptorDistRatio) {
+double runKNN(cv::Mat &descSource, cv::Mat &descRef, std::vector<cv::DMatch> &matches,
+              cv::Ptr<cv::DescriptorMatcher> &matcher, int desiredNumMatches, double minDescriptorDistRatio) {
   std::vector<std::vector<cv::DMatch>> knn_matches;
-  double t = (double)cv::getTickCount();
+  double time = (double)cv::getTickCount();
   matcher->knnMatch(descSource, descRef, knn_matches, desiredNumMatches);
-  t = ((double)cv::getTickCount() - t) / cv::getTickFrequency();
-  std::cout << " (kNN) with n=" << knn_matches.size() << " matches in " << 1000 * t / 1.0 << " ms" << std::endl;
+  time = ((double)cv::getTickCount() - time) / cv::getTickFrequency();
+  std::cout << " (kNN) with n=" << knn_matches.size() << " matches in " << 1000 * time / 1.0 << " ms" << std::endl;
   for (auto it = knn_matches.begin(); it != knn_matches.end(); ++it) {
     if ((*it)[0].distance < minDescriptorDistRatio * (*it)[1].distance) {
       matches.push_back((*it)[0]);
     }
   }
   std::cout << "# keypoints removed = " << knn_matches.size() - matches.size() << std::endl;
+  return time;
 }
