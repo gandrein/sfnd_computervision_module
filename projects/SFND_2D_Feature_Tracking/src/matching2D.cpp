@@ -89,9 +89,11 @@ double detKeypointsModern(DetectorMethod DetectorMethod, std::vector<cv::KeyPoin
     case DetectorMethod::BRISK:
       detector = cv::BRISK::create();
       break;
-    case DetectorMethod::ORB:
-      detector = cv::ORB::create();
+    case DetectorMethod::ORB: {
+      int maxNumberFeatures = 30000;
+      detector = cv::ORB::create(maxNumberFeatures);
       break;
+    }
     case DetectorMethod::AKAZE:
       detector = cv::AKAZE::create();
       break;
