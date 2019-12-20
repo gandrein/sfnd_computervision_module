@@ -118,11 +118,26 @@ void initSummaryFile(std::ofstream &ost, DetectorMethod detector, DescriptorMeth
         << ","
         << "DescriptorTime(ms)"
         << ","
-        << "MatchedPoints"
-        << ","
         << "MatchingTime(ms)"
         << ","
         << "TotalTime(ms)" << std::endl;
+    //  ost << "Frame"
+    //     << ","
+    //     << "DetectorType"
+    //     << ","
+    //     << "DescriptorType"
+    //     << ","
+    //     << "KeyPointsPerROI"
+    //     << ","
+    //     << "MatchedPoints"
+    //     << ","
+    //     << "DetectorTime(ms)"
+    //     << ","
+    //     << "DescriptorTime(ms)"
+    //     << ","
+    //     << "MatchingTime(ms)"
+    //     << ","
+    //     << "TotalTime(ms)" << std::endl;
   }
 }
 
@@ -157,6 +172,14 @@ void appendToSummaryInfoFile(std::ofstream &ost, DetectionResult &stats) {
         << stats.numMatches << "," << 1000.0 * stats.matchesComputeTimeSec << ", "
         << 1000.0 * (stats.detectionComputeTimeSec + stats.descriptorComputeTimeSec + stats.matchesComputeTimeSec)
         << std::endl;
+    //   ost << stats.imageIndex << "," << DetectorMethodToString(stats.detector) << ","
+    //       << DescriptorMethodToString(stats.descriptor) << "," << stats.numKeypointsROI << "," << stats.numMatches <<
+    //       ","
+    //       << 1000.0 * stats.detectionComputeTimeSec << "," << 1000.0 * stats.descriptorComputeTimeSec << ","
+    //       << 1000.0 * stats.matchesComputeTimeSec << ", "
+    //       << 1000.0 * (stats.detectionComputeTimeSec + stats.descriptorComputeTimeSec + stats.matchesComputeTimeSec)
+    //       << std::endl;
+    // }
   }
 }
 
@@ -164,16 +187,6 @@ void appendToDistributionInfoFile(std::ofstream &ost, DetectionResult &stats, st
   if (!ost.is_open()) {
     std::cerr << "Cannot save results, failed to open distribution results file" << std::endl;
   } else {
-    // ost << "Frame"
-    // << ","
-    // << "DetectorType"
-    // << ","
-    // << "KeyPointsPerFrame"
-    // << ","
-    // << "KeyPointsPerROI"
-    // << ","
-    // << "KeypointSizeData" << std::endl;
-
     ost << stats.imageIndex << "," << DetectorMethodToString(stats.detector) << "," << stats.numKeypointsFrame << ","
         << stats.numKeypointsROI;
     for (auto it = keypoints.begin(); it != keypoints.end(); it++) {
