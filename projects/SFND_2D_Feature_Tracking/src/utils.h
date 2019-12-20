@@ -19,11 +19,6 @@ struct DataSetConfig {
   int imgFillWidth = 4;   // no. of digits which make up the file index (e.g. img-0001.png)
 };
 
-struct Distribution {
-  double mean;
-  double stdev;
-};
-
 void loadNextImage(std::string imgFullFilename, cv::Mat &imgGray);
 std::string getDatasetImageName(DataSetConfig &dataInfo, size_t imgIndex);
 
@@ -77,14 +72,14 @@ inline std::string DescriptorMethodToString(const DescriptorMethod &v) {
   }
 }
 
-inline std::string DescriptorEncodingToString(const DescriptorEncoding &v) {
+inline std::string DescriptorMetricToString(const DescriptorMetric &v) {
   switch (v) {
-    case DescriptorEncoding::BINARY:
+    case DescriptorMetric::BINARY:
       return "BINARY";
-    case DescriptorEncoding::HOG:
+    case DescriptorMetric::HOG:
       return "HOG";
     default:
-      return "[Unknown DescriptorEncoding]";
+      return "[Unknown DescriptorMetric]";
   }
 }
 
@@ -118,8 +113,8 @@ inline std::string DescriptorMethodToString(int value) {
   return DescriptorMethodToString(static_cast<DescriptorMethod>(value));
 }
 
-inline std::string DescriptorEncodingToString(int value) {
-  return DescriptorEncodingToString(static_cast<DescriptorEncoding>(value));
+inline std::string DescriptorMetricToString(int value) {
+  return DescriptorMetricToString(static_cast<DescriptorMetric>(value));
 }
 
 inline std::string MatcherMethodToString(int value) { return MatcherMethodToString(static_cast<MatcherMethod>(value)); }
@@ -129,5 +124,6 @@ inline std::string NeighborSelectorMethodToString(int value) {
 }
 void initSummaryFile(std::ofstream &ost, DetectorMethod detector, DescriptorMethod descriptor);
 void initDistributionDataFile(std::ofstream &ost, DetectorMethod detector);
-void appendToSummaryFile(std::ofstream &ost, DetectionResult &stats);
+void appendToSummaryInfoFile(std::ofstream &ost, DetectionResult &stats);
+void appendToDistributionInfoFile(std::ofstream &ost, DetectionResult &stats, std::vector<cv::KeyPoint> &keypoints);
 #endif

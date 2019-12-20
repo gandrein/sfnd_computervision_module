@@ -44,9 +44,8 @@ double detKeypointsHarris(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img) {
 }
 
 double detectKeypointsClassic(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool useHarris) {
-  // compute detector parameters based on image size
-  int blockSize =
-      4;  //  size of an average block for computing a derivative covariation matrix over each pixel neighborhood
+  //  size of an average block for computing a derivative covariation matrix over each pixel neighborhood
+  int blockSize = 4;
   double maxOverlap = 0.0;  // max. permissible overlap between two features in %
   double minDistance = (1.0 - maxOverlap) * blockSize;
   int maxCorners = img.rows * img.cols / max(1.0, minDistance);  // max. num. of keypoints
@@ -75,39 +74,39 @@ double detectKeypointsClassic(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img
   return t;
 }
 
-double detKeypointsModern(DetectorMethod DetectorMethod, std::vector<cv::KeyPoint> &keypoints, cv::Mat &img) {
-  cv::Ptr<cv::FeatureDetector> detector = nullptr;
+double detKeypointsModern(DetectorMethod detector, std::vector<cv::KeyPoint> &keypoints, cv::Mat &img) {
+  cv::Ptr<cv::FeatureDetector> detectorPtr = nullptr;
   auto tick = cv::getTickCount();
-  switch (DetectorMethod) {
+  switch (detector) {
     case DetectorMethod::FAST: {
       int threshold = 40;  // difference between intensity of the central pixel and pixels of a circle around this pixel
       bool setNMS = true;  // perform non-maxima suppression on keypoints
       cv::FastFeatureDetector::DetectorType type = cv::FastFeatureDetector::TYPE_9_16;
-      detector = cv::FastFeatureDetector::create(threshold, setNMS, type);
+      detectorPtr = cv::FastFeatureDetector::create(threshold, setNMS, type);
       break;
     }
     case DetectorMethod::BRISK:
-      detector = cv::BRISK::create();
+      detectorPtr = cv::BRISK::create();
       break;
     case DetectorMethod::ORB: {
-      int maxNumberFeatures = 30000;
-      detector = cv::ORB::create(maxNumberFeatures);
+      int maxNumberFeatures = 500;
+      detectorPtr = cv::ORB::create(maxNumberFeatures);
       break;
     }
     case DetectorMethod::AKAZE:
-      detector = cv::AKAZE::create();
+      detectorPtr = cv::AKAZE::create();
       break;
     case DetectorMethod::SIFT:
-      detector = cv::xfeatures2d::SIFT::create();
+      detectorPtr = cv::xfeatures2d::SIFT::create();
       break;
     default:
       std::cout << "Unknown detector method!" << std::endl;
       return 0.0;
   }
 
-  detector->detect(img, keypoints);
+  detectorPtr->detect(img, keypoints);
   double t = static_cast<double>((cv::getTickCount() - tick)) / cv::getTickFrequency();
-  std::string detectorName = DetectorMethodToString(DetectorMethod);
+  std::string detectorName = DetectorMethodToString(detector);
   std::cout << detectorName << " with n= " << keypoints.size() << " keypoints in " << 1000 * t / 1.0 << " ms"
             << std::endl;
   return t;
@@ -161,17 +160,18 @@ double descKeypoints(DescriptorMethod descriptor, vector<cv::KeyPoint> &keypoint
 // Find best matches for keypoints in two camera images based on several matching methods
 double matchDescriptors(std::vector<cv::KeyPoint> &kPtsSource, std::vector<cv::KeyPoint> &kPtsRef, cv::Mat &descSource,
                         cv::Mat &descRef, std::vector<cv::DMatch> &matches, DescriptorMethod descriptorMethod,
-                        DescriptorEncoding descrEncoding, MatcherMethod matcherMethod,
-                        NeighborSelectorMethod nnSelector, bool crossCheck) {
+                        DescriptorMetric descrMetric, MatcherMethod matcherMethod, NeighborSelectorMethod nnSelector,
+                        bool crossCheck) {
   // configure matcher
   cv::Ptr<cv::DescriptorMatcher> matcher;
-  int normType = selectNormTypeMatcher(descriptorMethod, descrEncoding);
+  int normType = selectNormTypeMatcher(descriptorMethod, descrMetric);
   /*
    * TASK MP.5 -> add FLANN matching
    */
   // Select matcher method to be used
   switch (matcherMethod) {
     case MatcherMethod::FLANN: {
+      std::cout << "Using FLANN matching ..." << std::endl;
       if (descSource.type() != CV_32F) {
         // OpenCV bug workaround : convert binary descriptors to floating point due to
         // a bug in current OpenCV implementation
@@ -185,6 +185,7 @@ double matchDescriptors(std::vector<cv::KeyPoint> &kPtsSource, std::vector<cv::K
       break;
     }
     case MatcherMethod::BRUTE_FORCE:
+      std::cout << "Using BRUTE_FORCE matching ..." << std::endl;
       matcher = cv::BFMatcher::create(normType, crossCheck);
       break;
     default:
@@ -200,6 +201,7 @@ double matchDescriptors(std::vector<cv::KeyPoint> &kPtsSource, std::vector<cv::K
   double timeMatching = 0.0;
   switch (nnSelector) {
     case NeighborSelectorMethod::NN: {
+      std::cout << "Using NN match selection ..." << std::endl;
       double t = (double)cv::getTickCount();
       matcher->match(descSource, descRef, matches);  // Finds the best match for each descriptor in desc1
       timeMatching = ((double)cv::getTickCount() - t) / cv::getTickFrequency();
@@ -208,6 +210,7 @@ double matchDescriptors(std::vector<cv::KeyPoint> &kPtsSource, std::vector<cv::K
       break;
     }
     case NeighborSelectorMethod::kNN: {
+      std::cout << "Using kNN match selection ..." << std::endl;
       // k nearest neighbors (k=2)
       int desiredNumMatches = 2;
       double minDescriptorDistRatio = 0.8;
@@ -222,15 +225,15 @@ double matchDescriptors(std::vector<cv::KeyPoint> &kPtsSource, std::vector<cv::K
   return timeMatching;
 }
 
-int selectNormTypeMatcher(DescriptorMethod descriptorMethod, DescriptorEncoding descrEncoding) {
-  switch (descrEncoding) {
-    case DescriptorEncoding::BINARY:
+int selectNormTypeMatcher(DescriptorMethod descriptorMethod, DescriptorMetric descrMetric) {
+  switch (descrMetric) {
+    case DescriptorMetric::BINARY:
       if (descriptorMethod == DescriptorMethod::SIFT) {
         std::cout << "Enforce L2 norm type for SIFT descriptor" << std::endl;
         return static_cast<int>(cv::NORM_L2);
       }
       return static_cast<int>(cv::NORM_HAMMING);
-    case DescriptorEncoding::HOG:
+    case DescriptorMetric::HOG:
       return static_cast<int>(cv::NORM_L2);
     default:
       std::cout << "Unknown encoding for descriptor: supported binary(0)/hog(1)! Using binaray" << std::endl;

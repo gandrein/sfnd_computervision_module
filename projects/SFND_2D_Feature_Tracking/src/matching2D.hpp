@@ -30,9 +30,9 @@ double descKeypoints(DescriptorMethod descriptor, std::vector<cv::KeyPoint> &key
 
 double matchDescriptors(std::vector<cv::KeyPoint> &kPtsSource, std::vector<cv::KeyPoint> &kPtsRef, cv::Mat &descSource,
                         cv::Mat &descRef, std::vector<cv::DMatch> &matches, DescriptorMethod descriptorMethod,
-                        DescriptorEncoding descrEncoding, MatcherMethod matcherMethod,
-                        NeighborSelectorMethod nnSelector, bool crossCheck);
-int selectNormTypeMatcher(DescriptorMethod descriptorMethod, DescriptorEncoding descrEncoding);
+                        DescriptorMetric descrMetric, MatcherMethod matcherMethod, NeighborSelectorMethod nnSelector,
+                        bool crossCheck);
+int selectNormTypeMatcher(DescriptorMethod descriptorMethod, DescriptorMetric descrMetric);
 double runKNN(cv::Mat &descSource, cv::Mat &descRef, std::vector<cv::DMatch> &matches,
               cv::Ptr<cv::DescriptorMatcher> &matcher, int desiredNumMatches, double minDescriptorDistRatio);
 

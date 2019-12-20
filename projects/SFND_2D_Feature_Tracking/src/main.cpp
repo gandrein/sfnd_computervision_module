@@ -30,11 +30,11 @@ int main(int argc, const char *argv[]) {
   bool applyROI = false;
   bool crossCheckBruteForce = false;
   int maxKeypoints = 0;
-  int detectorSelected = static_cast<int>(DetectorMethod::SHITOMASI);        // default
-  int descriptorSelected = static_cast<int>(DescriptorMethod::BRISK);        // default
-  int descriptorEncodingSel = static_cast<int>(DescriptorEncoding::BINARY);  // default
-  int matcherSelected = static_cast<int>(MatcherMethod::BRUTE_FORCE);        // default
-  int nnMatcherSelected = static_cast<int>(NeighborSelectorMethod::NN);      // default
+  int detectorSelected = static_cast<int>(DetectorMethod::SHITOMASI);    // default
+  int descriptorSelected = static_cast<int>(DescriptorMethod::BRISK);    // default
+  int DescriptorMetricSel = static_cast<int>(DescriptorMetric::BINARY);  // default
+  int matcherSelected = static_cast<int>(MatcherMethod::BRUTE_FORCE);    // default
+  int nnMatcherSelected = static_cast<int>(NeighborSelectorMethod::NN);  // default
 
   // Command line arguments are used for debugging
   try {
@@ -57,9 +57,9 @@ int main(int argc, const char *argv[]) {
                                 "int");
     cmdlineArg.add(nnType);
 
-    TCLAP::ValueArg<int> descrEncoding("", "descriptor-encode", "Encoding of descriptor", 0, descriptorEncodingSel,
-                                       "int");
-    cmdlineArg.add(descrEncoding);
+    TCLAP::ValueArg<int> descrMetric("", "descriptor-metric", "Metric used in matching computation", 0,
+                                     DescriptorMetricSel, "int");
+    cmdlineArg.add(descrMetric);
 
     TCLAP::ValueArg<bool> useROI("", "roi", "Apply an ROI on preceeding vehicle", false, applyROI, "bool");
     cmdlineArg.add(useROI);
@@ -88,7 +88,7 @@ int main(int argc, const char *argv[]) {
 
     detectorSelected = detType.getValue();
     descriptorSelected = descType.getValue();
-    descriptorEncodingSel = descrEncoding.getValue();
+    DescriptorMetricSel = descrMetric.getValue();
     matcherSelected = matcherType.getValue();
     nnMatcherSelected = nnType.getValue();
     crossCheckBruteForce = useCrossCheck.getValue();
@@ -164,6 +164,10 @@ int main(int argc, const char *argv[]) {
       filterKeypointsROI(vehicleRect, keypoints);
       detectionInfoStats.numKeypointsROI = keypoints.size();
       detectionInfoStats.roiApplyed = true;
+      // save distribution info
+      Distribution distInfo = evalDistribution(keypoints);
+      detectionInfoStats.keypointStddevSizeROI = distInfo.stdev;
+      detectionInfoStats.keypointMeanSizeROI = distInfo.mean;
 
       // Debug section ....
       /*
@@ -188,13 +192,6 @@ int main(int argc, const char *argv[]) {
     // push keypoints and descriptor for current frame to end of data buffer
     (dataBuffer.end() - 1)->keypoints = keypoints;
 
-    // print distribution info
-    Distribution distInfo = evalDistribution(keypoints);
-    std::cout << "Method: " << DetectorMethodToString(detectorMethod) << ", time: " << timeKptDetection
-              << ", numKpts: " << detectionInfoStats.numKeypointsFrame << ", numKptsROI "
-              << detectionInfoStats.numKeypointsROI << ", meanKptSize" << distInfo.mean << ", stddevKptSize "
-              << distInfo.stdev << std::endl;
-
     /*
      * TASK MP.4 -> EXTRACT KEYPOINT DESCRIPTORS
      * -> add the following descriptors in file matching2D.cpp and enable string-based selection based on
@@ -204,23 +201,23 @@ int main(int argc, const char *argv[]) {
     cv::Mat descriptors;
     double timeDescriptor = descKeypoints(descriptorMethod, (dataBuffer.end() - 1)->keypoints,
                                           (dataBuffer.end() - 1)->cameraImg, descriptors);
-    detectionInfoStats.descriptor = descriptorMethod;
-    detectionInfoStats.descriptorComputeTimeSec = timeDescriptor;
     // push descriptors for current frame to end of data buffer
     (dataBuffer.end() - 1)->descriptors = descriptors;
+    detectionInfoStats.descriptor = descriptorMethod;
+    detectionInfoStats.descriptorComputeTimeSec = timeDescriptor;
 
     /* MATCH KEYPOINT DESCRIPTORS */
     if (dataBuffer.size() > 1) {
       // wait until at least two images have been processed
       std::vector<cv::DMatch> matches;
       MatcherMethod matcherMethod = static_cast<MatcherMethod>(matcherSelected);
-      DescriptorEncoding descriptorEncoding = static_cast<DescriptorEncoding>(descriptorEncodingSel);
+      DescriptorMetric descriptorMetric = static_cast<DescriptorMetric>(DescriptorMetricSel);
       NeighborSelectorMethod nnSelector = static_cast<NeighborSelectorMethod>(nnMatcherSelected);
 
       double timeMatcher =
           matchDescriptors((dataBuffer.end() - 2)->keypoints, (dataBuffer.end() - 1)->keypoints,
                            (dataBuffer.end() - 2)->descriptors, (dataBuffer.end() - 1)->descriptors, matches,
-                           descriptorMethod, descriptorEncoding, matcherMethod, nnSelector, crossCheckBruteForce);
+                           descriptorMethod, descriptorMetric, matcherMethod, nnSelector, crossCheckBruteForce);
 
       detectionInfoStats.numMatches = matches.size();
       detectionInfoStats.matchesComputeTimeSec = timeMatcher;
@@ -246,7 +243,8 @@ int main(int argc, const char *argv[]) {
         }  // wait for keyboard input before continuing
       }
     }
-    appendToSummaryFile(summaryCsvFile, detectionInfoStats);
+    appendToSummaryInfoFile(summaryCsvFile, detectionInfoStats);
+    appendToDistributionInfoFile(distributionCsvFile, detectionInfoStats, keypoints);
   }  // eof loop over all images
 
   summaryCsvFile.close();

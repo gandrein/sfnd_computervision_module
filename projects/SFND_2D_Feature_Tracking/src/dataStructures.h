@@ -8,7 +8,7 @@ enum class DetectorMethod { SHITOMASI = 0, HARRIS, AKAZE, BRISK, FAST, ORB, SIFT
 
 enum class DescriptorMethod { BRISK = 0, AKAZE, BRIEF, FREAK, ORB, SIFT };
 
-enum class DescriptorEncoding { BINARY = 0, HOG };
+enum class DescriptorMetric { BINARY = 0, HOG };
 
 enum class MatcherMethod { BRUTE_FORCE = 0, FLANN };
 
@@ -26,16 +26,24 @@ struct DataFrame {  // represents the available sensor information at the same t
 struct DetectionResult {
   int imageIndex = 0;
 
+  bool roiApplyed = false;
   DetectorMethod detector;
   DescriptorMethod descriptor;
   int numKeypointsFrame = 0;
   int numKeypointsROI = 0;
+  float keypointMeanSizeROI = 0;
+  float keypointStddevSizeROI = 0;
   int numMatches = 0;
 
   double detectionComputeTimeSec = 0;
   double descriptorComputeTimeSec = 0;
   double matchesComputeTimeSec = 0;
-  bool roiApplyed = false;
+  double totalComputationTimeSec = 0;
+};
+
+struct Distribution {
+  float mean;
+  float stdev;
 };
 
 #endif /* dataStructures_h */

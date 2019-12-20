@@ -79,7 +79,6 @@ Distribution evalDistribution(std::vector<cv::KeyPoint> &keypoints) {
   Distribution dist;
   double sum = std::accumulate(keypoints.begin(), keypoints.end(), 0.0,
                                [](int sum, const cv::KeyPoint &kpt) { return sum + static_cast<double>(kpt.size); });
-  std::cout << sum << std::endl;
   double mean = sum / keypoints.size();
 
   std::vector<double> diff(keypoints.size());
@@ -111,13 +110,19 @@ void initSummaryFile(std::ofstream &ost, DetectorMethod detector, DescriptorMeth
         << ","
         << "KeyPointsPerROI"
         << ","
+        << "KeypointSizeMean"
+        << ","
+        << "KeypointSizeStdDev"
+        << ","
         << "DetectorTime(ms)"
         << ","
         << "DescriptorTime(ms)"
         << ","
         << "MatchedPoints"
         << ","
-        << "MatchingTime(ms))" << std::endl;
+        << "MatchingTime(ms)"
+        << ","
+        << "TotalTime(ms)" << std::endl;
   }
 }
 
@@ -137,17 +142,43 @@ void initDistributionDataFile(std::ofstream &ost, DetectorMethod detector) {
         << ","
         << "KeyPointsPerROI"
         << ","
-        << "KeypointSizeVector" << std::endl;
+        << "KeypointSizeData" << std::endl;
   }
 }
 
-void appendToSummaryFile(std::ofstream &ost, DetectionResult &stats) {
+void appendToSummaryInfoFile(std::ofstream &ost, DetectionResult &stats) {
   if (!ost.is_open()) {
     std::cerr << "Cannot save results, failed to open summary results file" << std::endl;
   } else {
     ost << stats.imageIndex << "," << DetectorMethodToString(stats.detector) << ","
         << DescriptorMethodToString(stats.descriptor) << "," << stats.numKeypointsFrame << "," << stats.numKeypointsROI
-        << "," << 1000.0 * stats.detectionComputeTimeSec << "," << 1000.0 * stats.descriptorComputeTimeSec << ","
-        << stats.numMatches << "," << 1000.0 * stats.matchesComputeTimeSec << std::endl;
+        << "," << stats.keypointMeanSizeROI << "," << stats.keypointStddevSizeROI << ","
+        << 1000.0 * stats.detectionComputeTimeSec << "," << 1000.0 * stats.descriptorComputeTimeSec << ","
+        << stats.numMatches << "," << 1000.0 * stats.matchesComputeTimeSec << ", "
+        << 1000.0 * (stats.detectionComputeTimeSec + stats.descriptorComputeTimeSec + stats.matchesComputeTimeSec)
+        << std::endl;
+  }
+}
+
+void appendToDistributionInfoFile(std::ofstream &ost, DetectionResult &stats, std::vector<cv::KeyPoint> &keypoints) {
+  if (!ost.is_open()) {
+    std::cerr << "Cannot save results, failed to open distribution results file" << std::endl;
+  } else {
+    // ost << "Frame"
+    // << ","
+    // << "DetectorType"
+    // << ","
+    // << "KeyPointsPerFrame"
+    // << ","
+    // << "KeyPointsPerROI"
+    // << ","
+    // << "KeypointSizeData" << std::endl;
+
+    ost << stats.imageIndex << "," << DetectorMethodToString(stats.detector) << "," << stats.numKeypointsFrame << ","
+        << stats.numKeypointsROI;
+    for (auto it = keypoints.begin(); it != keypoints.end(); it++) {
+      ost << "," << (*it).size;
+    }
+    ost << std::endl;
   }
 }
