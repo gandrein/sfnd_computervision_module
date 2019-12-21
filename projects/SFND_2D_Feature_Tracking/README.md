@@ -55,7 +55,7 @@ For describing the neighborhood of keypoints, the following descriptor methods h
 
 Note that, as per [OpenCV documentation](https://docs.opencv.org/master/d8/d30/classcv_1_1AKAZE.html) AKAZE descriptors can only be used with KAZE or AKAZE keypoints.
 
-Also the SIFT descriptor does not work with ORB feature detector. Only reference to this behavior is this OpenCV [forum answer](https://answers.opencv.org/question/5542/sift-feature-descriptor-doesnt-work-with-orb-keypoinys/)
+Also the ORB descriptor does not work with SIFT feature detector. Only reference to this behavior is this OpenCV [forum answer](https://answers.opencv.org/question/5542/sift-feature-descriptor-doesnt-work-with-orb-keypoinys/)
 
 ### Keypoint Matching
 
@@ -116,7 +116,7 @@ _**Number of keypoints in ROI**_
 | 8	     | 112	  | 60    | 175		| 260	| 117	| 798 (124)     | 156
 | 9	     | 113	  | 57    | 175		| 250	| 106	| 792 (125)     | 135
 
-_**Keypoints computation time (miliseconds)**_
+_**Keypoints computation time (milliseconds)**_
 
 |#Image  |SHI-TOMASI | HARRIS | AKAZE	| BRISK	    | FAST	    | ORB	(default)   | SIFT |
 |:------:|:------:|:---------:|:------:|:----------:|:---------:|:-----------------:|:------:|
@@ -131,7 +131,7 @@ _**Keypoints computation time (miliseconds)**_
 | 8		 | 8.38145  | 10.3225 | 43.3202	| 215.885	| 0.644785  | 9.62902 (4.95		| 77.78
 | 9		 | 11.1336  | 7.37907 | 44.7813	| 218.801   | 0.782431  | 9.14905 (5.20)	| 76.12
 
-_**Keypoints average computation time (miliseconds)**_
+_**Keypoints average computation time (milliseconds)**_
 
 |SHI-TOMASI | HARRIS  | AKAZE   | BRISK	|   FAST    | ORB	    | SIFT |
 |:---------:|:-------:|:-------:|:-----:|:---------:|:---------:|:----:|
@@ -218,11 +218,11 @@ The table below lists the total average time needed to perform _feature detectio
 
 _**Average total processing time for all 10 images (milliseconds)**_
 
-| Descriptor / Detector  |SHI-TOMASI    | HARRIS       | AKAZE	      | BRISK	     | FAST	        | ORB 		    | SIFT       |
-|:----------------------:|:-------------:|:-----------:|:--------------:|:----------:|:-------------:|:------------:|:----------:|
-| BRISK		 	    	 | 1.62  (0.33) | 0.79  (0.14) | 1.42 (0.27)  | 2.30  (0.45) | 1.25  (0.20) |   1.16 (0.23) | 1.21 (0.26)
-| AKAZE		 	    	 | N/A 			| N/A     	   | 37.78 (0.33) | N/A 		 | N/A 		    | N/A 			| 	N/A
-| BRIEF	     	    	 | 1.27  (0.70) | 0.88  (1.29) | 1.26  (0.29) | 1.58  (0.46) | 1.67  (1.70) |  1. 15 (1.34) | 1.56 (0.19)
-| FREAK		 	    	 | 31.62 (0.20) | 31.47 (0.30) | 30.37 (0.27) | 28.73 (0.40) | 33.23 (0.60) |  32.51 (0.15) | 33.28 (0.16)
-| ORB		 	    	 | 1.21  (0.82)	| 1.15  (1.12) |  3.71 (0.22) | 4.00  (0.42) | 1.33  (1.42)	|  6.77 (0.81)  |   N/A
-| SIFT		 	    	 | 32.50 (0.56)	| 32.53 (0.18) | 30.52 (0.52) | 29.39 (0.99) | 35.11 (0.36)	|  33.54 (0.36) | 33.58 (0.36)
+| Descriptor / Detector  |SHI-TOMASI    | HARRIS       | AKAZE	      | BRISK	   | FAST	    | ORB 	     | SIFT       |
+|:----------------------:|:-------------:|:-----------:|:------------:|:----------:|:----------:|:----------:|:----------:|
+| BRISK		 	    	 |   13.6871    |   10.9985    |    50.7362   |   229.7289 |     2.1881 |     7.9091 |   84.6201
+| AKAZE		 	    	 |        N/A   |        N/A   |    91.2562   |        N/A |        N/A |        N/A |       N/A
+| BRIEF	     	    	 |   14.0338    |   14.5772    |    54.1236   |   228.0484 |     3.9861 |    12.1719 |   90.6306
+| FREAK		 	    	 |   42.9233    |   42.5173    |    79.0639   |   252.8761 |    34.5045 |    39.7477 |  116.0048
+| ORB		 	    	 |   13.8327    |   14.3381    |    54.2255   |   225.5801 |     3.4613 |    17.0145 |       N/A
+| SIFT		 	    	 |   45.6783    |   43.4679    |    80.2268   |   258.0812 |    36.2079 |    41.8059 |  119.3977
