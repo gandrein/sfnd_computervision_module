@@ -55,6 +55,8 @@ For describing the neighborhood of keypoints, the following descriptor methods h
 
 Note that, as per [OpenCV documentation](https://docs.opencv.org/master/d8/d30/classcv_1_1AKAZE.html) AKAZE descriptors can only be used with KAZE or AKAZE keypoints.
 
+Also the SIFT descriptor does not work with ORB feature detector. Only reference to this behavior is this OpenCV [forum answer](https://answers.opencv.org/question/5542/sift-feature-descriptor-doesnt-work-with-orb-keypoinys/)
+
 ### Keypoint Matching
 
 For evaluating the goodness of matching, the following two metrics can be used
@@ -180,35 +182,47 @@ In the current implementation the keypoint detection algorithm is fed the entire
 
 The results for all the combinations were saved in CSV files in the [results/task_mp8_mp9](./results/task_mp8_mp9) folder. The CSV files follow the naming pattern `results_<DETECTOR-METHOD>_<DESCRIPTOR-METHOD>_summary.csv`
 
-The table below gives the average matches per the 10 images used, for all descriptor-detector combinations (except AKAZE, for the reasons mentioned above as mentioned above).
+The table below gives the average matches per the 10 images used, for all descriptor-detector combinations (with the exception of AKAZE and SIFT descriptors, for the reasons mentioned above).
 The values in parenthesis represents the average number of keypoints in the ROI.
 
-_**Average ROI keypoints matched for all 10 images**_
+_**Average ROI keypoints matches for all 10 images**_
 
-| Descriptor / Detector  |SHI-TOMASI    | HARRIS       | AKAZE	        | BRISK	      	| FAST	        | ORB (default)  | SIFT       |
-|:----------------------:|:------------:|:------------:|:--------------:|:-------------:|:-------------:|:--------------:|:----------:|
-| BRISK		 	    	 | 86	(119)   |			   |				|				|				|				 |					
-| AKAZE		 	    	 | N/A          | N/A     	   |  N/A 			| N/A 			| N/A 			|	N/A 		 |
-| BRIEF	     	    	 | 105 	(119)   |			   |				|				|				|				 |					
-| FREAK		 	    	 | 86  	(119)   |			   |				|				|				|				 |					
-| ORB		 	    	 | 102	(119)   |			   |				|				|				|				 |					
-| SIFT		 	    	 | 64	(119)   |			   |				|				|				|				 |					
+| Descriptor / Detector  |SHI-TOMASI (119) | HARRIS  (56) | AKAZE (165) | BRISK	(271)  	| FAST (117)    | ORB (115)      | SIFT  (137)     |
+|:----------------------:|:---------------:|:------------:|:-----------:|:-------------:|:-------------:|:--------------:|:----------:|
+| BRISK		 	    	 | 86	(119)      | 44 (77.83%)  |138 (80.83%)	| 172 (63.25%)	| 82 (69.96%)   |	83 (71.88%)	 | 65 (47.49%)
+| AKAZE		 	    	 | N/A             | N/A     	  |139 (83.95%)	| N/A 			| N/A 			|	N/A 		 |
+| BRIEF	     	    	 | 105 	(119)      | 52 (91.90%)  |142 (85.53)	| 185 (68.25%)	| 100 (85.54%)	|	61 (53.0 %)	 | 80 (58.19%)
+| FREAK		 	    	 | 86  	(119)      | 44 (78.43%)  |131 (79.15%)	| 166 (61.25%)	| 79 (67.77%)	|	46 (40.20%)	 | 65 (47.65%)
+| ORB		 	    	 | 102	(119)      | 50 (89.52%)  |131 (78.89%)	| 164 (60.60%)	| 98 (84.21%)	|	84 (72.95)	 | 	N/A
+| SIFT		 	    	 | 64	(119)      | 34 (60.80%)  |106 (64.58)	| 119 (43.97%)	| 59 (50.75%)	|	38 (33.33%)	 | 34 (40.69%)
 
 The table below gives the average descriptor computation time and the average matching computation time per the 10 images used, for all descriptor-detector combinations, in the form `mean descriptor computation time ( mean matching evaluation time)`.
 
 
-_**Average Keypoint Descriptor/Match evaluation time for all 10 images**_
+_**Average Keypoint Descriptor/Match evaluation time for all 10 images (milliseconds)**_
 
-| Descriptor / Detector  |SHI-TOMASI    | HARRIS     | AKAZE	      | BRISK	    | FAST	        | ORB (default) | SIFT       |
-|:----------------------:|:-------------:|:---------:|:--------------:|:-----------:|:-------------:|:-------------:|:----------:|
-| BRISK		 	    	 | 1.62  (0.33) | 1.62  (0.33) | 1.62  (0.33) | 1.62  (0.33) | 1.62  (0.33) | 1.62  (0.33)  | 1.62  (0.33)
-| AKAZE		 	    	 | N/A 			| N/A     	   | N/A    	  | N/A 		 | N/A 		    | N/A 			| 	N/A
-| BRIEF	     	    	 | 1.27  (0.70) | 1.27  (0.70) | 1.27  (0.70) | 1.27  (0.70) | 1.27  (0.70) | 1.27  (0.70)  | 1.27  (0.70)
-| FREAK		 	    	 | 31.62 (0.20) | 31.62 (0.20) | 31.62 (0.20) | 31.62 (0.20) | 31.62 (0.20) | 31.62 (0.20)  | 31.62 (0.20)
-| ORB		 	    	 | 1.21  (0.82)	| 1.21  (0.82) | 1.21  (0.82) | 1.21  (0.82) | 1.21  (0.82)	| 1.21  (0.82)  | 1.21  (0.82)
-| SIFT		 	    	 | 32.50 (0.56)	| 32.50 (0.56) | 32.50 (0.56) | 32.50 (0.56) | 32.50 (0.56)	| 32.50 (0.56)  | 32.50 (0.56)|
+| Descriptor / Detector  |SHI-TOMASI    | HARRIS       | AKAZE	      | BRISK	     | FAST	        | ORB 		    | SIFT       |
+|:----------------------:|:-------------:|:-----------:|:--------------:|:----------:|:-------------:|:------------:|:----------:|
+| BRISK		 	    	 | 1.62  (0.33) | 0.79  (0.14) | 1.42 (0.27)  | 2.30  (0.45) | 1.25  (0.20) |   1.16 (0.23) | 1.21 (0.26)
+| AKAZE		 	    	 | N/A 			| N/A     	   | 37.78 (0.33) | N/A 		 | N/A 		    | N/A 			| 	N/A
+| BRIEF	     	    	 | 1.27  (0.70) | 0.88  (1.29) | 1.26  (0.29) | 1.58  (0.46) | 1.67  (1.70) |  1. 15 (1.34) | 1.56 (0.19)
+| FREAK		 	    	 | 31.62 (0.20) | 31.47 (0.30) | 30.37 (0.27) | 28.73 (0.40) | 33.23 (0.60) |  32.51 (0.15) | 33.28 (0.16)
+| ORB		 	    	 | 1.21  (0.82)	| 1.15  (1.12) |  3.71 (0.22) | 4.00  (0.42) | 1.33  (1.42)	|  6.77 (0.81)  |   N/A
+| SIFT		 	    	 | 32.50 (0.56)	| 32.53 (0.18) | 30.52 (0.52) | 29.39 (0.99) | 35.11 (0.36)	|  33.54 (0.36) | 33.58 (0.36)
 
 
 
 ### Recommended option
 
+The table below lists the total average time needed to perform _feature detection_ + _feature descriptor computation_ + _matching evaluation_ for all 10 images for each detector - descriptor combination. The total time for each image and each detector-descriptor combination can be found in the appropriate CSV file in the [results/task_mp8_mp9](./results/task_mp8_mp9) folder.
+
+_**Average total processing time for all 10 images (milliseconds)**_
+
+| Descriptor / Detector  |SHI-TOMASI    | HARRIS       | AKAZE	      | BRISK	     | FAST	        | ORB 		    | SIFT       |
+|:----------------------:|:-------------:|:-----------:|:--------------:|:----------:|:-------------:|:------------:|:----------:|
+| BRISK		 	    	 | 1.62  (0.33) | 0.79  (0.14) | 1.42 (0.27)  | 2.30  (0.45) | 1.25  (0.20) |   1.16 (0.23) | 1.21 (0.26)
+| AKAZE		 	    	 | N/A 			| N/A     	   | 37.78 (0.33) | N/A 		 | N/A 		    | N/A 			| 	N/A
+| BRIEF	     	    	 | 1.27  (0.70) | 0.88  (1.29) | 1.26  (0.29) | 1.58  (0.46) | 1.67  (1.70) |  1. 15 (1.34) | 1.56 (0.19)
+| FREAK		 	    	 | 31.62 (0.20) | 31.47 (0.30) | 30.37 (0.27) | 28.73 (0.40) | 33.23 (0.60) |  32.51 (0.15) | 33.28 (0.16)
+| ORB		 	    	 | 1.21  (0.82)	| 1.15  (1.12) |  3.71 (0.22) | 4.00  (0.42) | 1.33  (1.42)	|  6.77 (0.81)  |   N/A
+| SIFT		 	    	 | 32.50 (0.56)	| 32.53 (0.18) | 30.52 (0.52) | 29.39 (0.99) | 35.11 (0.36)	|  33.54 (0.36) | 33.58 (0.36)
