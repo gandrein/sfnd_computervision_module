@@ -1,1 +1,1 @@
-Frame,DetectorType,DescriptorType,KeyPointsPerROI,MatchedPoints,DetectorTime(ms),DescriptorTime(ms),MatchingTime(ms),TotalTime(ms)
+Frame,DetectorType,DescriptorType,KeyPointsPerFrame,KeyPointsPerROI,KeypointSizeMean,KeypointSizeStdDev,DetectorTime(ms),DescriptorTime(ms),MatchingTime(ms),TotalTime(ms)
