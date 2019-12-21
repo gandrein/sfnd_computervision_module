@@ -197,10 +197,11 @@ _**Average ROI keypoints matches for all 10 images**_
 | SIFT		 	    	 | 64	(53.78%)   | 34 (60.80%)  |106 (64.58)	| 119 (43.97%)	| 59 (50.75%)	|	38 (33.33%)	 | 34 (40.69%)
 
 As can be seen from the table above, on average the top 8 detector-descriptor combinations that perform best in terms of matching keypoints are
+
 _**Top descriptor-detector in terms of matches**_
 
 | TOP  | Detector    | Descriptor |
-|:----:|:-----------:|:----------:|:
+|:----:|:-----------:|:----------:|
 | 1    | SHI-TOMASI  |  BRIEF
 | 2    | AKAZE	     |  BRIEF
 | 3    | FAST	     |  BRIEF
@@ -246,9 +247,11 @@ _**Average total processing time for all 10 images (milliseconds)**_
 | SIFT		 	    	 |   45.6783    |   43.4679    |    80.2268   |   258.0812 |    36.2079 |    41.8059 |  119.3977
 
 As can be seen from the table above, on average the top 9 detector-descriptor combinations that perform best in terms of computation time are
+
 _**Top descriptor-detector in terms of total computation time**_
+
 | TOP  | Detector                | Descriptor |
-|:----:|:-----------------------:|:----------:|:
+|:----:|:-----------------------:|:----------:|
 | 1    | _FAST_ 		         |  BRISK
 | 2    | _FAST_ 	             |  ORB
 | 3    | _FAST_                  |  BRIEF
@@ -264,7 +267,7 @@ Where the FAST detector takes in total a few milliseconds whereas all the others
 Comparing the table above with the table _**Top descriptor-detector in terms of matches**_ from the previous section, it is clear that what performs better in terms of accuracy is more computationally demanding/intensive. If speed is of utmost importance, combining the results of the two tables, the top 3 choices would be
 
 | TOP  | Detector                | Descriptor |
-|:----:|:-----------------------:|:----------:|:
-| 1    | _FAST_ 		         |  BRIEF
-| 2    | _FAST_ 	             |  ORB
+|:----:|:-----------------------:|:----------:|
+| 1    | FAST   		         |  BRIEF
+| 2    | FAST   	             |  ORB
 | 3    | SHI-TOMASI or HARRIS    |  BRIEF
