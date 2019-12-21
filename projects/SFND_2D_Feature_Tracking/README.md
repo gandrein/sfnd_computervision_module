@@ -187,14 +187,31 @@ The values in parenthesis represents the average number of keypoints in the ROI.
 
 _**Average ROI keypoints matches for all 10 images**_
 
-| Descriptor / Detector  |SHI-TOMASI (119) | HARRIS  (56) | AKAZE (165) | BRISK	(271)  	| FAST (117)    | ORB (115)      | SIFT  (137)     |
+| Descriptor / Detector  |SHI-TOMASI (119) | HARRIS  (56) | AKAZE (165) | BRISK	(271)  	| FAST (117)    | ORB (115)      | SIFT  (137) |
 |:----------------------:|:---------------:|:------------:|:-----------:|:-------------:|:-------------:|:--------------:|:----------:|
-| BRISK		 	    	 | 86	(119)      | 44 (77.83%)  |138 (80.83%)	| 172 (63.25%)	| 82 (69.96%)   |	83 (71.88%)	 | 65 (47.49%)
+| BRISK		 	    	 | 86	(72.27%)   | 44 (77.83%)  |138 (80.83%)	| 172 (63.25%)	| 82 (69.96%)   |	83 (71.88%)	 | 65 (47.49%)
 | AKAZE		 	    	 | N/A             | N/A     	  |139 (83.95%)	| N/A 			| N/A 			|	N/A 		 |
-| BRIEF	     	    	 | 105 	(119)      | 52 (91.90%)  |142 (85.53)	| 185 (68.25%)	| 100 (85.54%)	|	61 (53.0 %)	 | 80 (58.19%)
-| FREAK		 	    	 | 86  	(119)      | 44 (78.43%)  |131 (79.15%)	| 166 (61.25%)	| 79 (67.77%)	|	46 (40.20%)	 | 65 (47.65%)
-| ORB		 	    	 | 102	(119)      | 50 (89.52%)  |131 (78.89%)	| 164 (60.60%)	| 98 (84.21%)	|	84 (72.95)	 | 	N/A
-| SIFT		 	    	 | 64	(119)      | 34 (60.80%)  |106 (64.58)	| 119 (43.97%)	| 59 (50.75%)	|	38 (33.33%)	 | 34 (40.69%)
+| BRIEF	     	    	 | 105 	(88.24%)   | 52 (91.90%)  |142 (85.53)	| 185 (68.25%)	| 100 (85.54%)	|	61 (53.0 %)	 | 80 (58.19%)
+| FREAK		 	    	 | 86  	(72.27%)   | 44 (78.43%)  |131 (79.15%)	| 166 (61.25%)	| 79 (67.77%)	|	46 (40.20%)	 | 65 (47.65%)
+| ORB		 	    	 | 102	(85.71%)   | 50 (89.52%)  |131 (78.89%)	| 164 (60.60%)	| 98 (84.21%)	|	84 (72.95)	 | 	N/A
+| SIFT		 	    	 | 64	(53.78%)   | 34 (60.80%)  |106 (64.58)	| 119 (43.97%)	| 59 (50.75%)	|	38 (33.33%)	 | 34 (40.69%)
+
+As can be seen from the table above, on average the top 8 detector-descriptor combinations that perform best in terms of matching keypoints are
+_**Top descriptor-detector in terms of matches**_
+
+| TOP  | Detector    | Descriptor |
+|:----:|:-----------:|:----------:|:
+| 1    | SHI-TOMASI  |  BRIEF
+| 2    | AKAZE	     |  BRIEF
+| 3    | FAST	     |  BRIEF
+| 4    | HARRIS	     |  BRIEF
+| 5    | HARRIS	     |  ORB
+| 6    | SHI-TOMASI	 |  ORB
+| 7    | FAST	     |  ORB
+| 8    | AKAZE	     |  AKAZE
+
+Note however that the BRISK detector behaves consistently across all descriptor types, even though the percentage of matches is low, the number of keypoints inside the ROI is on average double compared to any other detector.
+
 
 The table below gives the average descriptor computation time and the average matching computation time per the 10 images used, for all descriptor-detector combinations, in the form `mean descriptor computation time ( mean matching evaluation time)`.
 
@@ -210,6 +227,7 @@ _**Average Keypoint Descriptor/Match evaluation time for all 10 images (millisec
 | ORB		 	    	 | 1.21  (0.82)	| 1.15  (1.12) |  3.71 (0.22) | 4.00  (0.42) | 1.33  (1.42)	|  6.77 (0.81)  |   N/A
 | SIFT		 	    	 | 32.50 (0.56)	| 32.53 (0.18) | 30.52 (0.52) | 29.39 (0.99) | 35.11 (0.36)	|  33.54 (0.36) | 33.58 (0.36)
 
+The table above highlights mainly that the FREAK, SIFT and AKAZE descriptors are the slowest, an order of magnitude slower than all the other descriptors. Whereas the `BRUTE FORCE` matching on average is faster than the descriptor computation for most descriptor-detector combinations.
 
 
 ### Recommended option
@@ -226,3 +244,27 @@ _**Average total processing time for all 10 images (milliseconds)**_
 | FREAK		 	    	 |   42.9233    |   42.5173    |    79.0639   |   252.8761 |    34.5045 |    39.7477 |  116.0048
 | ORB		 	    	 |   13.8327    |   14.3381    |    54.2255   |   225.5801 |     3.4613 |    17.0145 |       N/A
 | SIFT		 	    	 |   45.6783    |   43.4679    |    80.2268   |   258.0812 |    36.2079 |    41.8059 |  119.3977
+
+As can be seen from the table above, on average the top 9 detector-descriptor combinations that perform best in terms of computation time are
+_**Top descriptor-detector in terms of total computation time**_
+| TOP  | Detector                | Descriptor |
+|:----:|:-----------------------:|:----------:|:
+| 1    | _FAST_ 		         |  BRISK
+| 2    | _FAST_ 	             |  ORB
+| 3    | _FAST_                  |  BRIEF
+| 4    | ORB	                 |  BRISK
+| 5    | HARRIS	                 |  BRISK
+| 6    | ORB	                 |  BRIEF
+| 7    | SHI-TOMASI     		 |  BRISK
+| 8    | SHI-TOMASI / HARRIS	 |  ORB
+| 9    | SHI-TOMASI / HARRIS     |  BRIEF
+
+Where the FAST detector takes in total a few milliseconds whereas all the others are in the order of ~10 - ~15 milliseconds.
+
+Comparing the table above with the table _**Top descriptor-detector in terms of matches**_ from the previous section, it is clear that what performs better in terms of accuracy is more computationally demanding/intensive. If speed is of utmost importance, combining the results of the two tables, the top 3 choices would be
+
+| TOP  | Detector                | Descriptor |
+|:----:|:-----------------------:|:----------:|:
+| 1    | _FAST_ 		         |  BRIEF
+| 2    | _FAST_ 	             |  ORB
+| 3    | SHI-TOMASI or HARRIS    |  BRIEF
