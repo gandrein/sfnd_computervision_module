@@ -74,7 +74,7 @@ void matchDescriptors(cv::Mat &imgSource, cv::Mat &imgRef, vector<cv::KeyPoint> 
   // cv::waitKey(0);
   while ((cv::waitKey() & 0xEFFFFF) != 27) {
     continue;
-  }  // wait for keyboard input before continuing
+  }  // wait for esc input before continuing
 }
 
 int main() {
