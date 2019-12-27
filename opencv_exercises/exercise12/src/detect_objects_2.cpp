@@ -34,7 +34,10 @@ void detectObjects2() {
   // generate 4D blob from input image
   cv::Mat blob;
   double scalefactor = 1 / 255.0;
-  cv::Size size = cv::Size(416, 416);
+  /* setting blob, size can be:320/416/608 
+  * detection time increases with size but detection performance/accuracy is better 
+  */ 
+  cv::Size size = cv::Size(608, 608);
   cv::Scalar mean = cv::Scalar(0, 0, 0);
   bool swapRB = false;
   bool crop = false;
@@ -53,10 +56,13 @@ void detectObjects2() {
     names[i] = layersNames[outLayers[i] - 1];
   }
 
+  double t = (double)cv::getTickCount();
   // invoke forward propagation through network
   std::vector<cv::Mat> netOutput;
   net.setInput(blob);
   net.forward(netOutput, names);
+  t = ((double)cv::getTickCount() - t) / cv::getTickFrequency();
+  std::cout << "Forward pass took: " << 1000 * t / 1.0 << " ms" << std::endl;
 
   // Scan through all bounding boxes and keep only the ones with high confidence
   float confThreshold = 0.20;
