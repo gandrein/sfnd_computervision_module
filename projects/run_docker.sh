@@ -26,9 +26,9 @@ $(echo $docker_run_cmd) \
     -e "QT_X11_NO_MITSHM=1" \
     -v /tmp/.X11-unix:/tmp/.X11-unix:rw \
     -v $HOME/.Xauthority:/root/.Xauthority -e XAUTHORITY=/root/.Xauthority \
-    -v $BASEDIR:/home/docker/code \
     -v $HOME/.clang-format-v6:/home/docker/.clang-format \
     -v $HOME/.bash_aliases:/home/docker/.bash_aliases \
     -v $HOME/.bashrc:/home/docker/.bashrc \
+    -v $BASEDIR:/home/docker/code \
     -it $IMAGE_NAME "$@"
 
