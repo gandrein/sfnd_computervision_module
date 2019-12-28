@@ -113,7 +113,7 @@ void clusterLidarWithROI(std::vector<BoundingBox> &boundingBoxes, std::vector<Li
   cv::Mat visImg = img.clone();
   cv::Mat overlay = visImg.clone();
 
-  bool overlayLidarPointBeforeRemoval = false;
+  bool showLidarBeforeExclusionFromMultipleBoundingBoxes = false;
 
   for (auto it1 = lidarPoints.begin(); it1 != lidarPoints.end(); ++it1) {
     // assemble vector for matrix-vector-multiplication
@@ -128,11 +128,16 @@ void clusterLidarWithROI(std::vector<BoundingBox> &boundingBoxes, std::vector<Li
     pt.x = Y.at<double>(0, 0) / Y.at<double>(0, 2);  // pixel coordinates
     pt.y = Y.at<double>(1, 0) / Y.at<double>(0, 2);
 
-    // REDUCE enclosed number of Lidar Points by using a bounding box
-    // shrinkage factor
-    double shrinkFactor = 0.10;
+    /* GO over all boundingboxes and check if to which box the lidar point belongs to
+     * in addition perform the following:
+     *  - reduce the bounding box size (with a shrinkage factor) to reduce the number of lidar points which don't belong
+     *    to a vehicle
+     *  - if a point belongs to multiple bounding boxes, keep track of it
+     */
+
     // pointers to all bounding boxes which enclose the current Lidar point
     vector<vector<BoundingBox>::iterator> enclosingBoxes;
+    double shrinkFactor = 0.10;
     for (vector<BoundingBox>::iterator it2 = boundingBoxes.begin(); it2 != boundingBoxes.end(); ++it2) {
       // shrink current bounding box slightly to avoid having too many outlier points around the edges
       cv::Rect smallerBox;
@@ -141,17 +146,12 @@ void clusterLidarWithROI(std::vector<BoundingBox> &boundingBoxes, std::vector<Li
       smallerBox.width = (*it2).roi.width * (1 - shrinkFactor);
       smallerBox.height = (*it2).roi.height * (1 - shrinkFactor);
 
-      if (overlayLidarPointBeforeRemoval) {
-        float val = it1->x;
-        float maxVal = 20.0;
-        int red = min(255, (int)(255 * abs((val - maxVal) / maxVal)));
-        int green = min(255, (int)(255 * (1 - abs((val - maxVal) / maxVal))));
-        cv::circle(overlay, pt, 5, cv::Scalar(0, green, red), -1);
-      }
-
       // check wether point is within current bounding box
       if (smallerBox.contains(pt)) {
-        if (!overlayLidarPointBeforeRemoval) {
+        // add this box to the list of enclosing boxes
+        enclosingBoxes.push_back(it2);
+
+        if (showLidarBeforeExclusionFromMultipleBoundingBoxes) {
           // before erasing the iterator and making it invalid
           float val = it1->x;
           float maxVal = 20.0;
@@ -159,14 +159,28 @@ void clusterLidarWithROI(std::vector<BoundingBox> &boundingBoxes, std::vector<Li
           int green = min(255, (int)(255 * (1 - abs((val - maxVal) / maxVal))));
           cv::circle(overlay, pt, 5, cv::Scalar(0, green, red), -1);
         }
-
-        it2->lidarPoints.push_back(*it1);
-        lidarPoints.erase(it1);
-        it1--;
-        break;
       }
     }  // eof loop over all bounding boxes
 
+    // Do not count / discard any lidar point that is enclosed by multiple bounding boxes
+    // i.e., if a point belongs to multiple bounding boxes, enclosingBoxes.size() > 1
+    // then, just ignore it, but if  enclosingBoxes.size() == 1 add the lidar point to it
+    if (enclosingBoxes.size() == 1) {
+      /* NOTE!!!
+       * enclosingBoxes[0] is an iterator and therefore a  pointer to a BoundingBox element
+       * when we assign a lidar point to this element, we assign a lidar point to the Bounding
+       * Box to which this iterator is pointing to
+       */
+      enclosingBoxes[0]->lidarPoints.push_back(*it1);
+      // before erasing the iterator and making it invalid
+      if (!showLidarBeforeExclusionFromMultipleBoundingBoxes) {
+        float val = it1->x;
+        float maxVal = 20.0;
+        int red = min(255, (int)(255 * abs((val - maxVal) / maxVal)));
+        int green = min(255, (int)(255 * (1 - abs((val - maxVal) / maxVal))));
+        cv::circle(overlay, pt, 5, cv::Scalar(0, green, red), -1);
+      }
+    }
   }  // eof loop over all Lidar points
 
   // show results
