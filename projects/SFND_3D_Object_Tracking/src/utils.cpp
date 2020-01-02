@@ -120,5 +120,5 @@ void filterKeypointsNumber(DetectorMethod detector, std::vector<cv::KeyPoint> &k
     //   DetectorMethod::SIFT:
     cv::KeyPointsFilter::retainBest(keypoints, maxNumber);
   }
-  std::cout << " NOTE: Keypoints have been limited!" << std::endl;
+  std::cout << " NOTE: Keypoints have been limited to " << maxNumber << "!" << std::endl;
 }

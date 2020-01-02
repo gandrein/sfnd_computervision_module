@@ -20,7 +20,7 @@ add_executable(3D_object_tracking
             src/main.cpp
             src/cameraFusion.cpp
             src/lidarData.cpp
-            src/matching2D.cpp
+            src/matchingFeatures2D.cpp
             src/objectDetection2D.cpp
             src/utils.cpp)
 target_link_libraries(3D_object_tracking ${OpenCV_LIBRARIES})

@@ -18,6 +18,13 @@
 
 #include "dataStructures.h"
 
+void runFeatureDetection(DataFrame &currentFrame, DetectorMethod detector, DescriptorMethod descriptor,
+                         int limitMaxKeypoints, bool visualize);
+
+void performFeatureMatching(DataFrame &currentFrame, DataFrame &previousFrame, DescriptorMethod descriptorMethod,
+                            DescriptorMetric descriptorMetric, MatcherMethod matcherMethod,
+                            NeighborSelectorMethod nnSelector, bool crossCheckBruteForce, bool visualize);
+
 double detectKeypoints(DetectorMethod detector, std::vector<cv::KeyPoint> &keypoints, cv::Mat &img,
                        bool visualize = false);
 double detectKeypointsClassic(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool useHarris);

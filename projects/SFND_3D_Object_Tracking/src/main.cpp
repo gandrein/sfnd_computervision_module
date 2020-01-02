@@ -17,7 +17,7 @@
 #include "cameraFusion.h"
 #include "dataStructures.h"
 #include "lidarData.h"
-#include "matching2D.h"
+#include "matchingFeatures2D.h"
 #include "objectDetection2D.h"
 #include "tclap/CmdLine.h"
 #include "utils.h"
@@ -27,16 +27,22 @@ int main(int argc, const char *argv[]) {
   // Defaults
   bool visualizeYolo = false;
   bool visualizeFusedData = false;
-  bool applyROI = false;
+  bool visualizeKeypoints = false;
+  bool visualizeKeypointMatch = false;
   bool crossCheckBruteForce = false;
-  int maxKeypoints = 0;
-  int detectorSelected = static_cast<int>(DetectorMethod::SHITOMASI);
+  int limitMaxKeypoints = 0;
+  int detectorSelected = static_cast<int>(DetectorMethod::FAST);
   int descriptorSelected = static_cast<int>(DescriptorMethod::BRISK);
   int DescriptorMetricSel = static_cast<int>(DescriptorMetric::BINARY);
   int matcherSelected = static_cast<int>(MatcherMethod::BRUTE_FORCE);
-  int nnMatcherSelected = static_cast<int>(NeighborSelectorMethod::NN);
+  int nnMatcherSelected = static_cast<int>(NeighborSelectorMethod::kNN);
 
   // Command line arguments are used for debugging
+  // Example
+  /*
+  ./3D_object_tracking --show-yolo 1 --show-front-object-fused 1  --show-keypoints 1 --show-keypoint-match 1
+  --limit-keypts 10
+  */
   try {
     TCLAP::CmdLine cmdlineArg("2D features tracking");
 
@@ -61,18 +67,15 @@ int main(int argc, const char *argv[]) {
                                      DescriptorMetricSel, "int");
     cmdlineArg.add(descrMetric);
 
-    TCLAP::ValueArg<bool> useROI("", "roi", "Apply an ROI on preceeding vehicle", false, applyROI, "bool");
-    cmdlineArg.add(useROI);
-
     TCLAP::ValueArg<bool> useCrossCheck(
         "", "cross-check",
         "Cross-Check matching between source and destination images. Used only for BRUTE_FORCE matcher.", false,
         crossCheckBruteForce, "bool");
     cmdlineArg.add(useCrossCheck);
 
-    TCLAP::ValueArg<int> maxNumKeypoints("", "max-keypts",
-                                         "Limit the number of keypoints (for debugging) to provided value", false,
-                                         maxKeypoints, "int");
+    TCLAP::ValueArg<int> maxNumKeypoints("", "limit-keypts",
+                                         "Limit the number of keypoints on object (for debugging and visualization)",
+                                         false, limitMaxKeypoints, "int");
     cmdlineArg.add(maxNumKeypoints);
 
     TCLAP::ValueArg<bool> visYOLO("", "show-yolo", "Show results of Yolo detection for each frame", false,
@@ -82,15 +85,22 @@ int main(int argc, const char *argv[]) {
                                     "Show results of fusing image detection with lidar for front ego-lane object",
                                     false, visualizeFusedData, "bool");
     cmdlineArg.add(visFusion);
+    TCLAP::ValueArg<bool> visKeypoints("", "show-keypoints", "Show results of keypoint detection", false,
+                                       visualizeKeypoints, "bool");
+    cmdlineArg.add(visKeypoints);
+    TCLAP::ValueArg<bool> visKeypointMatch("", "show-keypoint-match", "Show keypoint matches between frames", false,
+                                           visualizeKeypointMatch, "bool");
+    cmdlineArg.add(visKeypointMatch);
 
     cmdlineArg.parse(argc, argv);
 
     dataPath = dir.getValue();
     visualizeYolo = visYOLO.getValue();
     visualizeFusedData = visFusion.getValue();
+    visualizeKeypoints = visKeypoints.getValue();
+    visualizeKeypointMatch = visKeypointMatch.getValue();
 
-    applyROI = useROI.getValue();
-    maxKeypoints = maxNumKeypoints.getValue();
+    limitMaxKeypoints = maxNumKeypoints.getValue();
 
     detectorSelected = detType.getValue();
     descriptorSelected = descType.getValue();
@@ -109,6 +119,9 @@ int main(int argc, const char *argv[]) {
   } catch (TCLAP::ArgException &e) {
     std::cerr << "error: " << e.error() << " for arg " << e.argId() << std::endl;
   }
+
+  DetectorMethod detectorMethod = static_cast<DetectorMethod>(detectorSelected);
+  DescriptorMethod descriptorMethod = static_cast<DescriptorMethod>(descriptorSelected);
 
   // camera dataset config
   DataSetConfig imgDataInfo;
@@ -150,7 +163,6 @@ int main(int argc, const char *argv[]) {
        imgIndex += imgDataInfo.indexStepSize) {
     // Assemble filenames for current index
     std::string imgFullFilename = getDatasetImageName(imgDataInfo, imgIndex);
-
     // Load image from file
     cv::Mat img = cv::imread(imgFullFilename);
 
@@ -158,13 +170,12 @@ int main(int argc, const char *argv[]) {
     DataFrame frame;
     frame.cameraImg = img;
     pushToBuffer(dataBuffer, frame);
-
-    auto lastFrameIter = dataBuffer.end() - 1;
+    auto currentFrameIter = dataBuffer.end() - 1;
 
     // Detect and classify objectst with YOLO
     yoloConfig.confidenceThreshold = 0.2;
     yoloConfig.nmsThreshold = 0.4;
-    detectObjects(lastFrameIter->cameraImg, lastFrameIter->boundingBoxes, yoloConfig, visualizeYolo);
+    detectObjects(currentFrameIter->cameraImg, currentFrameIter->boundingBoxes, yoloConfig, visualizeYolo);
 
     // Load 3D Lidar points from file
     std::string lidarFullFilename = lidarDataInfo.basePath + lidarDataInfo.prefix +
@@ -181,120 +192,56 @@ int main(int argc, const char *argv[]) {
     lidarEgoLane.maxY = 2.0;
     lidarEgoLane.minReflect = 0.1;
     cropLidarPoints(lidarPoints, lidarEgoLane);
-    lastFrameIter->lidarPoints = lidarPoints;
+    currentFrameIter->lidarPoints = lidarPoints;
 
     /* Associate Lidar points with camera-based ROI
      *  -> shrink factor - shrinks each bounding box by the given percentage to avoid 3D object merging at the edges of
      * an ROI
      */
     float shrinkFactor = 0.10;
-    clusterLidarWithROI(lastFrameIter->boundingBoxes, lastFrameIter->lidarPoints, shrinkFactor, P_rect_00, R_rect_00,
-                        RT);
+    clusterLidarWithROI(currentFrameIter->boundingBoxes, currentFrameIter->lidarPoints, shrinkFactor, P_rect_00,
+                        R_rect_00, RT);
 
     // Visualize 3D objects
     if (visualizeFusedData) {
-      show3DObjects((dataBuffer.end() - 1)->boundingBoxes, cv::Size(4.0, 20.0), cv::Size(2000, 2000),
-                    visualizeFusedData);
-    }
-    // REMOVE THIS LINE BEFORE PROCEEDING WITH THE FINAL PROJECT
-    continue;  // skips directly to the next image without processing what comes beneath
-
-    /* DETECT IMAGE KEYPOINTS */
-
-    // convert current image to grayscale
-    cv::Mat imgGray;
-    cv::cvtColor((dataBuffer.end() - 1)->cameraImg, imgGray, cv::COLOR_BGR2GRAY);
-
-    // extract 2D keypoints from current image
-    std::vector<cv::KeyPoint> keypoints;  // create empty feature list for current image
-    std::string detectorType = "SHITOMASI";
-
-    if (detectorType.compare("SHITOMASI") == 0) {
-      detKeypointsShiTomasi(keypoints, imgGray, false);
-    } else {
-      //...
+      show3DObjects(currentFrameIter->boundingBoxes, cv::Size(4.0, 20.0), cv::Size(2000, 2000), visualizeFusedData);
     }
 
-    // optional : limit number of keypoints (helpful for debugging and learning)
-    bool bLimitKpts = false;
-    if (bLimitKpts) {
-      int maxKeypoints = 50;
+    // Perform features detection and run feature descriptor algorithms
+    runFeatureDetection(*currentFrameIter, detectorMethod, descriptorMethod, limitMaxKeypoints, visualizeKeypoints);
 
-      if (detectorType.compare("SHITOMASI") ==
-          0) {  // there is no response info, so keep the first 50 as they are sorted in descending quality order
-        keypoints.erase(keypoints.begin() + maxKeypoints, keypoints.end());
-      }
-      cv::KeyPointsFilter::retainBest(keypoints, maxKeypoints);
-      std::cout << " NOTE: Keypoints have been limited!" << std::endl;
-    }
-
-    // push keypoints and descriptor for current frame to end of data buffer
-    (dataBuffer.end() - 1)->keypoints = keypoints;
-
-    std::cout << "#5 : DETECT KEYPOINTS done" << std::endl;
-
-    /* EXTRACT KEYPOINT DESCRIPTORS */
-
-    cv::Mat descriptors;
-    std::string descriptorType = "BRISK";  // BRISK, BRIEF, ORB, FREAK, AKAZE, SIFT
-    descKeypoints((dataBuffer.end() - 1)->keypoints, (dataBuffer.end() - 1)->cameraImg, descriptors, descriptorType);
-
-    // push descriptors for current frame to end of data buffer
-    (dataBuffer.end() - 1)->descriptors = descriptors;
-
-    std::cout << "#6 : EXTRACT DESCRIPTORS done" << std::endl;
-
+    // Perform Keypoint matching
     if (dataBuffer.size() > 1)  // wait until at least two images have been processed
     {
-      /* MATCH KEYPOINT DESCRIPTORS */
+      auto previousFrameIter = dataBuffer.end() - 2;
+      MatcherMethod matcherMethod = static_cast<MatcherMethod>(matcherSelected);
+      DescriptorMetric descriptorMetric = static_cast<DescriptorMetric>(DescriptorMetricSel);
+      NeighborSelectorMethod nnSelector = static_cast<NeighborSelectorMethod>(nnMatcherSelected);
 
-      std::vector<cv::DMatch> matches;
-      std::string matcherType = "MAT_BF";         // MAT_BF, MAT_FLANN
-      std::string descriptorType = "DES_BINARY";  // DES_BINARY, DES_HOG
-      std::string selectorType = "SEL_NN";        // SEL_NN, SEL_KNN
+      performFeatureMatching(*currentFrameIter, *previousFrameIter, descriptorMethod, descriptorMetric, matcherMethod,
+                             nnSelector, crossCheckBruteForce, visualizeKeypointMatch);
 
-      matchDescriptors((dataBuffer.end() - 2)->keypoints, (dataBuffer.end() - 1)->keypoints,
-                       (dataBuffer.end() - 2)->descriptors, (dataBuffer.end() - 1)->descriptors, matches,
-                       descriptorType, matcherType, selectorType);
+      continue;
 
-      // store matches in current data frame
-      (dataBuffer.end() - 1)->kptMatches = matches;
-
-      std::cout << "#7 : MATCH KEYPOINT DESCRIPTORS done" << std::endl;
-
-      /* TRACK 3D OBJECT BOUNDING BOXES */
-
-      //// STUDENT ASSIGNMENT
-      //// TASK FP.1 -> match list of 3D objects (vector<BoundingBox>) between current and previous frame (implement
-      ///->matchBoundingBoxes)
-      std::map<int, int> bbBestMatches;
-      matchBoundingBoxes(matches, bbBestMatches, *(dataBuffer.end() - 2),
-                         *(dataBuffer.end() -
-                           1));  // associate bounding boxes between current and previous frame using keypoint matches
-      //// EOF STUDENT ASSIGNMENT
-
-      // store matches in current data frame
-      (dataBuffer.end() - 1)->bbMatches = bbBestMatches;
-
-      std::cout << "#8 : TRACK 3D OBJECT BOUNDING BOXES done" << std::endl;
+      /* Track 3D object bounding boxes
+       *  associate bounding boxes between current and previous frame using keypoint matches
+       */
+      matchBoundingBoxes(*currentFrameIter, *previousFrameIter);
 
       /* COMPUTE TTC ON OBJECT IN FRONT */
-
       // loop over all BB match pairs
-      for (auto it1 = (dataBuffer.end() - 1)->bbMatches.begin(); it1 != (dataBuffer.end() - 1)->bbMatches.end();
-           ++it1) {
+      for (auto it1 = currentFrameIter->bbMatches.begin(); it1 != currentFrameIter->bbMatches.end(); ++it1) {
         // find bounding boxes associates with current match
         BoundingBox *prevBB, *currBB;
-        for (auto it2 = (dataBuffer.end() - 1)->boundingBoxes.begin();
-             it2 != (dataBuffer.end() - 1)->boundingBoxes.end(); ++it2) {
+        for (auto it2 = currentFrameIter->boundingBoxes.begin(); it2 != currentFrameIter->boundingBoxes.end(); ++it2) {
           if (it1->second == it2->boxID)  // check wether current match partner corresponds to this BB
           {
             currBB = &(*it2);
           }
         }
 
-        for (auto it2 = (dataBuffer.end() - 2)->boundingBoxes.begin();
-             it2 != (dataBuffer.end() - 2)->boundingBoxes.end(); ++it2) {
+        for (auto it2 = previousFrameIter->boundingBoxes.begin(); it2 != previousFrameIter->boundingBoxes.end();
+             ++it2) {
           if (it1->first == it2->boxID)  // check wether current match partner corresponds to this BB
           {
             prevBB = &(*it2);
@@ -315,15 +262,15 @@ int main(int argc, const char *argv[]) {
           //// TASK FP.3 -> assign enclosed keypoint matches to bounding box (implement -> clusterKptMatchesWithROI)
           //// TASK FP.4 -> compute time-to-collision based on camera (implement -> computeTTCCamera)
           double ttcCamera;
-          clusterKptMatchesWithROI(*currBB, (dataBuffer.end() - 2)->keypoints, (dataBuffer.end() - 1)->keypoints,
-                                   (dataBuffer.end() - 1)->kptMatches);
-          computeTTCCamera((dataBuffer.end() - 2)->keypoints, (dataBuffer.end() - 1)->keypoints, currBB->kptMatches,
+          clusterKptMatchesWithROI(*currBB, previousFrameIter->keypoints, currentFrameIter->keypoints,
+                                   currentFrameIter->kptMatches);
+          computeTTCCamera(previousFrameIter->keypoints, currentFrameIter->keypoints, currBB->kptMatches,
                            sensorFrameRate, ttcCamera);
           //// EOF STUDENT ASSIGNMENT
 
           visualize = true;
           if (visualize) {
-            cv::Mat visImg = (dataBuffer.end() - 1)->cameraImg.clone();
+            cv::Mat visImg = currentFrameIter->cameraImg.clone();
             showLidarImgOverlay(visImg, currBB->lidarPoints, P_rect_00, R_rect_00, RT, &visImg);
             cv::rectangle(visImg, cv::Point(currBB->roi.x, currBB->roi.y),
                           cv::Point(currBB->roi.x + currBB->roi.width, currBB->roi.y + currBB->roi.height),
@@ -344,7 +291,6 @@ int main(int argc, const char *argv[]) {
         }  // eof TTC computation
       }    // eof loop over all BB matches
     }
-
   }  // eof loop over all images
 
   return 0;

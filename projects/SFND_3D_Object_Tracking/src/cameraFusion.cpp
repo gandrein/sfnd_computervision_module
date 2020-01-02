@@ -138,7 +138,10 @@ void computeTTCLidar(std::vector<LidarPoint> &lidarPointsPrev, std::vector<Lidar
   // ...
 }
 
-void matchBoundingBoxes(std::vector<cv::DMatch> &matches, std::map<int, int> &bbBestMatches, DataFrame &prevFrame,
-                        DataFrame &currFrame) {
-  // ...
+void matchBoundingBoxes(DataFrame &currFrame, DataFrame &prevFrame, std::vector<cv::DMatch> &matches) {
+  std::map<int, int> bbBestMatches;
+  // store matches in current data frame
+  currFrame.bbMatches = bbBestMatches;
+
+  std::cout << "#8 : TRACK 3D OBJECT BOUNDING BOXES done" << std::endl;
 }
