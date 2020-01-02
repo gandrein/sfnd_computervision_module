@@ -54,6 +54,7 @@ void clusterLidarWithROI(std::vector<BoundingBox> &boundingBoxes, std::vector<Li
     }
 
   }  // eof loop over all Lidar points
+  std::cout << "#4 : CLUSTER LIDAR POINT CLOUD done" << std::endl;
 }
 
 void show3DObjects(std::vector<BoundingBox> &boundingBoxes, cv::Size worldSize, cv::Size imageSize, bool bWait) {
@@ -111,12 +112,13 @@ void show3DObjects(std::vector<BoundingBox> &boundingBoxes, cv::Size worldSize, 
 
   // display image
   string windowName = "3D Objects";
-  cv::namedWindow(windowName, 1);
+  cv::namedWindow(windowName, cv::WINDOW_NORMAL);
   cv::imshow(windowName, topviewImg);
+  cv::resizeWindow(windowName, 800, 600);  // need this for Arch i3 otherwise it is not shown properly
 
-  if (bWait) {
-    cv::waitKey(0);  // wait for key to be pressed
-  }
+  while ((cv::waitKey() & 0xEFFFFF) != 27) {
+    continue;
+  }  // wait for keyboard input before continuing
 }
 
 // associate a given bounding box with the keypoints it contains

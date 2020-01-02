@@ -6,8 +6,48 @@
 #include <opencv2/core.hpp>
 #include <vector>
 
+enum class DetectorMethod { SHITOMASI = 0, HARRIS, AKAZE, BRISK, FAST, ORB, SIFT };
+
+enum class DescriptorMethod { BRISK = 0, AKAZE, BRIEF, FREAK, ORB, SIFT };
+
+enum class DescriptorMetric { BINARY = 0, HOG };
+
+enum class MatcherMethod { BRUTE_FORCE = 0, FLANN };
+
+enum class NeighborSelectorMethod { NN = 0, kNN };  // NearestNeighbor, kNearestNeighbor
+
+struct DataSetConfig {
+  std::string basePath;
+  std::string prefix;
+  std::string fileType;
+  int startIndex = 0;  // first file index to load (assumes Lidar and camera names have identical naming convention)
+  int endIndex = 9;    // last file index to load
+  int indexNameWidth = 4;   // no. of digits which make up the file index (e.g. img-0001.png)
+  int indexStepSize = 1;
+
+};
+
+struct YoloConfig {
+  std::string filesPath;
+  std::string nnClassFile;
+  std::string modelWeightsCfg;
+  std::string modelWeightsFile;
+  float confidenceThreshold;
+  float nmsThreshold;
+};
+
 struct LidarPoint {   // single lidar point in space
   double x, y, z, r;  // x,y,z in [m], r is point reflectivity
+};
+
+struct LidarROI {
+  float minZ;
+  float maxZ;
+  float minX;
+  float maxX;
+  float minY;
+  float maxY;
+  float minReflect;
 };
 
 struct BoundingBox {  // bounding box around a classified object (contains both 2D and 3D data)

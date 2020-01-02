@@ -8,18 +8,18 @@
 using namespace std;
 
 // remove Lidar points based on min. and max distance in X, Y and Z
-void cropLidarPoints(std::vector<LidarPoint> &lidarPoints, float minX, float maxX, float maxY, float minZ, float maxZ,
-                     float minR) {
+void cropLidarPoints(std::vector<LidarPoint> &lidarPoints, LidarROI& roi) {
   std::vector<LidarPoint> newLidarPts;
   for (auto it = lidarPoints.begin(); it != lidarPoints.end(); ++it) {
-    if ((*it).x >= minX && (*it).x <= maxX && (*it).z >= minZ && (*it).z <= maxZ && (*it).z <= 0.0 &&
-        abs((*it).y) <= maxY && (*it).r >= minR)  // Check if Lidar point is outside of boundaries
+    if ((*it).x >= roi.minX && (*it).x <= roi.maxX && (*it).z >= roi.minZ && (*it).z <= roi.maxZ && (*it).z <= 0.0 &&
+        abs((*it).y) <= roi.maxY && (*it).r >= roi.minReflect)  // Check if Lidar point is outside of boundaries
     {
       newLidarPts.push_back(*it);
     }
   }
 
   lidarPoints = newLidarPts;
+  std::cout << "#3 : CROP LIDAR POINTS done" << std::endl;
 }
 
 // Load Lidar points from a given location and store them in a vector
@@ -52,6 +52,7 @@ void loadLidarFromFile(vector<LidarPoint> &lidarPoints, string filename) {
     pr += 4;
   }
   fclose(stream);
+  free(data);
 }
 
 void showLidarTopview(std::vector<LidarPoint> &lidarPoints, cv::Size worldSize, cv::Size imageSize, bool bWait) {
@@ -64,7 +65,7 @@ void showLidarTopview(std::vector<LidarPoint> &lidarPoints, cv::Size worldSize, 
     float yw = (*it).y;  // world position in m with y facing left from sensor
 
     int y = (-xw * imageSize.height / worldSize.height) + imageSize.height;
-    int x = (-yw * imageSize.height / worldSize.height) + imageSize.width / 2;
+    int x = (-yw * imageSize.width / worldSize.width) + imageSize.width / 2;
 
     cv::circle(topviewImg, cv::Point(x, y), 5, cv::Scalar(0, 0, 255), -1);
   }

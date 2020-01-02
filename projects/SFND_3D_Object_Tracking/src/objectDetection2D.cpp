@@ -13,17 +13,15 @@ using namespace std;
 
 // detects objects in an image using the YOLO library and a set of pre-trained objects from the COCO database;
 // a set of 80 classes is listed in "coco.names" and pre-trained weights are stored in "yolov3.weights"
-void detectObjects(cv::Mat& img, std::vector<BoundingBox>& bBoxes, float confThreshold, float nmsThreshold,
-                   std::string basePath, std::string classesFile, std::string modelConfiguration,
-                   std::string modelWeights, bool bVis) {
+void detectObjects(cv::Mat& img, std::vector<BoundingBox>& bBoxes, YoloConfig yoloConfig, bool visualize) {
   // load class names from file
   vector<string> classes;
-  ifstream ifs(classesFile.c_str());
+  ifstream ifs(yoloConfig.nnClassFile.c_str());
   string line;
   while (getline(ifs, line)) classes.push_back(line);
 
   // load neural network
-  cv::dnn::Net net = cv::dnn::readNetFromDarknet(modelConfiguration, modelWeights);
+  cv::dnn::Net net = cv::dnn::readNetFromDarknet(yoloConfig.modelWeightsCfg, yoloConfig.modelWeightsFile);
   net.setPreferableBackend(cv::dnn::DNN_BACKEND_OPENCV);
   net.setPreferableTarget(cv::dnn::DNN_TARGET_CPU);
 
@@ -64,7 +62,7 @@ void detectObjects(cv::Mat& img, std::vector<BoundingBox>& bBoxes, float confThr
 
       // Get the value and location of the maximum score
       cv::minMaxLoc(scores, 0, &confidence, 0, &classId);
-      if (confidence > confThreshold) {
+      if (confidence > yoloConfig.confidenceThreshold) {
         cv::Rect box;
         int cx, cy;
         cx = (int)(data[0] * img.cols);
@@ -83,7 +81,9 @@ void detectObjects(cv::Mat& img, std::vector<BoundingBox>& bBoxes, float confThr
 
   // perform non-maxima suppression
   vector<int> indices;
-  cv::dnn::NMSBoxes(boxes, confidences, confThreshold, nmsThreshold, indices);
+  cv::dnn::NMSBoxes(boxes, confidences, yoloConfig.confidenceThreshold, yoloConfig.nmsThreshold, indices);
+
+  // fill in Bounding Box structure with data from YOLO
   for (auto it = indices.begin(); it != indices.end(); ++it) {
     BoundingBox bBox;
     bBox.roi = boxes[*it];
@@ -95,7 +95,7 @@ void detectObjects(cv::Mat& img, std::vector<BoundingBox>& bBoxes, float confThr
   }
 
   // show results
-  if (bVis) {
+  if (visualize) {
     cv::Mat visImg = img.clone();
     for (auto it = bBoxes.begin(); it != bBoxes.end(); ++it) {
       // Draw rectangle displaying the bounding box
@@ -118,9 +118,13 @@ void detectObjects(cv::Mat& img, std::vector<BoundingBox>& bBoxes, float confThr
       cv::putText(visImg, label, cv::Point(left, top), cv::FONT_ITALIC, 0.75, cv::Scalar(0, 0, 0), 1);
     }
 
+    std::cout << "#2 : DETECT & CLASSIFY OBJECTS done" << std::endl;
+
     string windowName = "Object classification";
     cv::namedWindow(windowName, 1);
     cv::imshow(windowName, visImg);
-    cv::waitKey(0);  // wait for key to be pressed
+    while ((cv::waitKey() & 0xEFFFFF) != 27) {
+      continue;
+    }  // wait for keyboard input before continuing
   }
 }
