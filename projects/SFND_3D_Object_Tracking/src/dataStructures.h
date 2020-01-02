@@ -1,6 +1,6 @@
 
-#ifndef dataStructures_h
-#define dataStructures_h
+#ifndef DATA_STRUCTURES_H_
+#define DATA_STRUCTURES_H_
 
 #include <map>
 #include <opencv2/core.hpp>
@@ -37,4 +37,4 @@ struct DataFrame {  // represents the available sensor information at the same t
   std::map<int, int> bbMatches;            // bounding box matches between previous and current frame
 };
 
-#endif /* dataStructures_h */
+#endif /* DATA_STRUCTURES_H_ */

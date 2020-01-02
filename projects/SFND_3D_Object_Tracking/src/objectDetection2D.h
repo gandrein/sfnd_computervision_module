@@ -1,6 +1,6 @@
 
-#ifndef objectDetection2D_hpp
-#define objectDetection2D_hpp
+#ifndef OBJECT_DETECTION_H_
+#define OBJECT_DETECTION_H_
 
 #include <stdio.h>
 #include <opencv2/core.hpp>
@@ -11,4 +11,4 @@ void detectObjects(cv::Mat& img, std::vector<BoundingBox>& bBoxes, float confThr
                    std::string basePath, std::string classesFile, std::string modelConfiguration,
                    std::string modelWeights, bool bVis);
 
-#endif /* objectDetection2D_hpp */
+#endif /* OBJECT_DETECTION_H_ */

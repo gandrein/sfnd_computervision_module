@@ -14,11 +14,11 @@
 #include <sstream>
 #include <vector>
 
-#include "camFusion.hpp"
+#include "cameraFusion.h"
 #include "dataStructures.h"
-#include "lidarData.hpp"
-#include "matching2D.hpp"
-#include "objectDetection2D.hpp"
+#include "lidarData.h"
+#include "matching2D.h"
+#include "objectDetection2D.h"
 
 using namespace std;
 

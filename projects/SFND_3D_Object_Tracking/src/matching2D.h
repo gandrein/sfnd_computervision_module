@@ -1,6 +1,6 @@
 
-#ifndef matching2D_hpp
-#define matching2D_hpp
+#ifndef MATCHING_2D_H_
+#define MATCHING_2D_H_
 
 #include <stdio.h>
 #include <cmath>
@@ -29,4 +29,4 @@ void matchDescriptors(std::vector<cv::KeyPoint> &kPtsSource, std::vector<cv::Key
                       cv::Mat &descRef, std::vector<cv::DMatch> &matches, std::string descriptorType,
                       std::string matcherType, std::string selectorType);
 
-#endif /* matching2D_hpp */
+#endif /* MATCHING_2D_H_ */

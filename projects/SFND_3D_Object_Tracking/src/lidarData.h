@@ -1,6 +1,6 @@
 
-#ifndef lidarData_hpp
-#define lidarData_hpp
+#ifndef LIDAR_DATA_H_
+#define LIDAR_DATA_H_
 
 #include <stdio.h>
 #include <fstream>
@@ -15,4 +15,4 @@ void loadLidarFromFile(std::vector<LidarPoint> &lidarPoints, std::string filenam
 void showLidarTopview(std::vector<LidarPoint> &lidarPoints, cv::Size worldSize, cv::Size imageSize, bool bWait = true);
 void showLidarImgOverlay(cv::Mat &img, std::vector<LidarPoint> &lidarPoints, cv::Mat &P_rect_xx, cv::Mat &R_rect_xx,
                          cv::Mat &RT, cv::Mat *extVisImg = nullptr);
-#endif /* lidarData_hpp */
+#endif /* LIDAR_DATA_H_ */

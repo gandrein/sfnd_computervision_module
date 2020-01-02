@@ -1,10 +1,11 @@
 
-#ifndef camFusion_hpp
-#define camFusion_hpp
+#ifndef CAMERA_FUSION_H_
+#define CAMERA_FUSION_H_
 
 #include <stdio.h>
 #include <opencv2/core.hpp>
 #include <vector>
+
 #include "dataStructures.h"
 
 void clusterLidarWithROI(std::vector<BoundingBox> &boundingBoxes, std::vector<LidarPoint> &lidarPoints,
@@ -20,4 +21,4 @@ void computeTTCCamera(std::vector<cv::KeyPoint> &kptsPrev, std::vector<cv::KeyPo
                       std::vector<cv::DMatch> kptMatches, double frameRate, double &TTC, cv::Mat *visImg = nullptr);
 void computeTTCLidar(std::vector<LidarPoint> &lidarPointsPrev, std::vector<LidarPoint> &lidarPointsCurr,
                      double frameRate, double &TTC);
-#endif /* camFusion_hpp */
+#endif /* CAMERA_FUSION_H_ */
