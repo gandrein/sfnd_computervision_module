@@ -1,14 +1,34 @@
 
 #include <algorithm>
 #include <iostream>
+#include <numeric>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include "lidarData.h"
 
 using namespace std;
 
+double computeMedianLidarX(std::vector<LidarPoint> &vals) {
+  size_t size = vals.size();
+
+  if (size == 0) {
+    return 0;  // Undefined.
+  }
+  std::sort(vals.begin(), vals.end(), [](LidarPoint a, LidarPoint b) { return a.x < b.x; });
+  if (size % 2 == 0) {
+    return (vals[size / 2 - 1].x + vals[size / 2].x) / 2;
+  } else {
+    return vals[size / 2].x;
+  }
+}
+
+double computeMeanLidarX(std::vector<LidarPoint> &vals) {
+  double sum = std::accumulate(vals.begin(), vals.end(), 0.0, [](int sum, const LidarPoint &p) { return sum + p.x; });
+  return sum / vals.size();
+}
+
 // remove Lidar points based on min. and max distance in X, Y and Z
-void cropLidarPoints(std::vector<LidarPoint> &lidarPoints, LidarROI& roi) {
+void cropLidarPoints(std::vector<LidarPoint> &lidarPoints, LidarROI &roi) {
   std::vector<LidarPoint> newLidarPts;
   for (auto it = lidarPoints.begin(); it != lidarPoints.end(); ++it) {
     if ((*it).x >= roi.minX && (*it).x <= roi.maxX && (*it).z >= roi.minZ && (*it).z <= roi.maxZ && (*it).z <= 0.0 &&

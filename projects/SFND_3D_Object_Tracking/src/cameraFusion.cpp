@@ -11,13 +11,13 @@
 
 using namespace std;
 
-BoundingBox* findBoundingBoxByID(std::vector<BoundingBox>& boundingBoxes, int boxId) {
-    for (auto it = boundingBoxes.begin(); it != boundingBoxes.end(); ++it) {
-      if (boxId == it->boxID)  // check wether current match partner corresponds to this BB
-      {
-        return &(*it);
-      }
+BoundingBox *findBoundingBoxByID(std::vector<BoundingBox> &boundingBoxes, int boxId) {
+  for (auto it = boundingBoxes.begin(); it != boundingBoxes.end(); ++it) {
+    if (boxId == it->boxID)  // check wether current match partner corresponds to this BB
+    {
+      return &(*it);
     }
+  }
 }
 
 // Create groups of Lidar points whose projection into the camera falls into the same bounding box
@@ -181,11 +181,10 @@ void matchBoundingBoxes(DataFrame &currFrame, DataFrame &prevFrame) {
                                  std::max_element(prevFrameBoxMatchesIndex.begin(), prevFrameBoxMatchesIndex.end()));
     if (prevFrameBoxMatchesIndex[boxIndex] != 0) {
       bbBestMatches.insert({prevFrame.boundingBoxes[boxIndex].boxID, currBox.boxID});
-      std::cout << " >>> Current boxID: " << currBox.boxID
-                << ", most associated with previous frame boxID: " << prevFrame.boundingBoxes[boxIndex].boxID
-                << std::endl;
+      std::cout << " >>> currentBoxID -> previousBoxID: " << currBox.boxID << " => "
+                << prevFrame.boundingBoxes[boxIndex].boxID << std::endl;
     } else {
-      std::cout << " >>> Current boxID no match found with previous boxes" << std::endl;
+      std::cout << " >>> currentBoxID -> previousBoxID: " << currBox.boxID << " => NONE" << std::endl;
     }
 
     if (debugPrintBoxAssociations) {

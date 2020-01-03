@@ -11,7 +11,7 @@
 #include "dataStructures.h"
 #include "utils.h"
 
-void loadKittiCalibrationData(cv::Mat &P_rect_00, cv::Mat &R_rect_00, cv::Mat &RT){
+void loadKittiCalibrationData(cv::Mat &P_rect_00, cv::Mat &R_rect_00, cv::Mat &RT) {
   // ANG: THESE values should be parsed/read from the KITTI camera calibration files
   RT.at<double>(0, 0) = 7.533745e-03;
   RT.at<double>(0, 1) = -9.999714e-01;
@@ -123,7 +123,7 @@ void filterKeypointsNumber(DetectorMethod detector, std::vector<cv::KeyPoint> &k
   std::cout << "    >>> NOTE: Keypoints have been limited to " << maxNumber << "!" << std::endl;
 }
 
-void showYoloDetectionOnImage(DataFrame& frameData, YoloConfig yoloConfig, std::string labelPostFix){
+void showYoloDetectionOnImage(DataFrame &frameData, YoloConfig yoloConfig, std::string labelPostFix) {
   // load class names from file
   std::vector<std::string> classes;
   std::ifstream ifs(yoloConfig.nnClassFile.c_str());
@@ -131,38 +131,39 @@ void showYoloDetectionOnImage(DataFrame& frameData, YoloConfig yoloConfig, std::
   while (getline(ifs, line)) classes.push_back(line);
 
   cv::Mat visImg = frameData.cameraImg.clone();
-    for (auto it = frameData.boundingBoxes.begin(); it != frameData.boundingBoxes.end(); ++it) {
-      // Draw rectangle displaying the bounding box
-      int top, left, width, height;
-      top = (*it).roi.y;
-      left = (*it).roi.x;
-      width = (*it).roi.width;
-      height = (*it).roi.height;
-      cv::rectangle(visImg, cv::Point(left, top), cv::Point(left + width, top + height), cv::Scalar(0, 255, 0), 2);
+  for (auto it = frameData.boundingBoxes.begin(); it != frameData.boundingBoxes.end(); ++it) {
+    // Draw rectangle displaying the bounding box
+    int top, left, width, height;
+    top = (*it).roi.y;
+    left = (*it).roi.x;
+    width = (*it).roi.width;
+    height = (*it).roi.height;
+    cv::rectangle(visImg, cv::Point(left, top), cv::Point(left + width, top + height), cv::Scalar(0, 255, 0), 2);
 
-      std::string label = cv::format("%.2f", (*it).confidence);
-      label = std::to_string(it->boxID) + ":" + classes[((*it).classID)] + ":" + label;
+    std::string label = cv::format("%.2f", (*it).confidence);
+    label = std::to_string(it->boxID) + ":" + classes[((*it).classID)] + ":" + label;
 
-      // Display label at the top of the bounding box
-      int baseLine;
-      cv::Size labelSize = getTextSize(label, cv::FONT_ITALIC, 0.5, 1, &baseLine);
-      top = std::max(top, labelSize.height);
-      rectangle(visImg, cv::Point(left, top - round(1.5 * labelSize.height)),
-                cv::Point(left + round(1.5 * labelSize.width), top + baseLine), cv::Scalar(255, 255, 255), cv::FILLED);
-      cv::putText(visImg, label, cv::Point(left, top), cv::FONT_ITALIC, 0.75, cv::Scalar(0, 0, 0), 1);
-    }
+    // Display label at the top of the bounding box
+    int baseLine;
+    cv::Size labelSize = getTextSize(label, cv::FONT_ITALIC, 0.5, 1, &baseLine);
+    top = std::max(top, labelSize.height);
+    rectangle(visImg, cv::Point(left, top - round(1.5 * labelSize.height)),
+              cv::Point(left + round(1.5 * labelSize.width), top + baseLine), cv::Scalar(255, 255, 255), cv::FILLED);
+    cv::putText(visImg, label, cv::Point(left, top), cv::FONT_ITALIC, 0.75, cv::Scalar(0, 0, 0), 1);
+  }
 
-    std::string windowName = "Object classification | " + labelPostFix;
-    cv::namedWindow(windowName, 1);
-    cv::imshow(windowName, visImg);
-    // while ((cv::waitKey() & 0xEFFFFF) != 27) {
-    //   continue;
-    // }  // wait for keyboard input before continuing
+  std::string windowName = "Object classification | " + labelPostFix;
+  cv::namedWindow(windowName, 1);
+  cv::imshow(windowName, visImg);
+  // while ((cv::waitKey() & 0xEFFFFF) != 27) {
+  //   continue;
+  // }  // wait for keyboard input before continuing
 }
 
-void showMultimapContent(std::multimap<int, int>& myMap) {
+void showMultimapContent(std::multimap<int, int> &myMap) {
   for (std::multimap<int, int>::iterator itr = myMap.begin(); itr != myMap.end(); ++itr) {
     std::cout << '\t' << itr->first << '\t' << itr->second << '\n';
   }
   std::cout << '\n';
 }
+

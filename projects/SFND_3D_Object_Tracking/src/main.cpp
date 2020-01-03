@@ -20,8 +20,8 @@
 #include "matchingFeatures2D.h"
 #include "objectDetection2D.h"
 #include "tclap/CmdLine.h"
-#include "utils.h"
 #include "ttc.h"
+#include "utils.h"
 
 int main(int argc, const char *argv[]) {
   std::string dataPath = "../";
@@ -34,9 +34,10 @@ int main(int argc, const char *argv[]) {
   int limitMaxKeypoints = 0;
   int detectorSelected = static_cast<int>(DetectorMethod::FAST);
   int descriptorSelected = static_cast<int>(DescriptorMethod::BRISK);
-  int DescriptorMetricSel = static_cast<int>(DescriptorMetric::BINARY);
+  int descriptorMetricSel = static_cast<int>(DescriptorMetric::BINARY);
   int matcherSelected = static_cast<int>(MatcherMethod::BRUTE_FORCE);
   int nnMatcherSelected = static_cast<int>(NeighborSelectorMethod::kNN);
+  int lidarTtcMethodSel = static_cast<int>(LidarTtcMethod::MEAN);
 
   // Command line arguments are used for debugging
   // Example
@@ -65,8 +66,12 @@ int main(int argc, const char *argv[]) {
     cmdlineArg.add(nnType);
 
     TCLAP::ValueArg<int> descrMetric("", "descriptor-metric", "Metric used in matching computation", 0,
-                                     DescriptorMetricSel, "int");
+                                     descriptorMetricSel, "int");
     cmdlineArg.add(descrMetric);
+
+    TCLAP::ValueArg<int> lidarTTC("", "lidar-ttc-method", "Method used to compute lidar TTC (mean/median/clustering", 0,
+                                  lidarTtcMethodSel, "int");
+    cmdlineArg.add(lidarTTC);
 
     TCLAP::ValueArg<bool> useCrossCheck(
         "", "cross-check",
@@ -105,10 +110,12 @@ int main(int argc, const char *argv[]) {
 
     detectorSelected = detType.getValue();
     descriptorSelected = descType.getValue();
-    DescriptorMetricSel = descrMetric.getValue();
+    descriptorMetricSel = descrMetric.getValue();
     matcherSelected = matcherType.getValue();
     nnMatcherSelected = nnType.getValue();
     crossCheckBruteForce = useCrossCheck.getValue();
+
+    lidarTtcMethodSel = lidarTTC.getValue();
 
     // Check AKAZE descriptor/detector combination
     if (descriptorSelected == static_cast<int>(DescriptorMethod::AKAZE) &&
@@ -124,8 +131,9 @@ int main(int argc, const char *argv[]) {
   DetectorMethod detectorMethod = static_cast<DetectorMethod>(detectorSelected);
   DescriptorMethod descriptorMethod = static_cast<DescriptorMethod>(descriptorSelected);
   MatcherMethod matcherMethod = static_cast<MatcherMethod>(matcherSelected);
-  DescriptorMetric descriptorMetric = static_cast<DescriptorMetric>(DescriptorMetricSel);
+  DescriptorMetric descriptorMetric = static_cast<DescriptorMetric>(descriptorMetricSel);
   NeighborSelectorMethod nnSelector = static_cast<NeighborSelectorMethod>(nnMatcherSelected);
+  LidarTtcMethod lidarTtcMethod = static_cast<LidarTtcMethod>(lidarTtcMethodSel);
 
   // camera dataset config
   DataSetConfig imgDataInfo;
@@ -187,7 +195,7 @@ int main(int argc, const char *argv[]) {
     loadLidarFromFile(lidarPoints, lidarFullFilename);
 
     // Crop lidar points - remove Lidar points based on distance properties
-    bool enableEgoLaneLidarCropping = false; // for debugging
+    bool enableEgoLaneLidarCropping = true;  // for debugging
     if (enableEgoLaneLidarCropping) {
       LidarROI lidarEgoLane;  // focus on ego lane
       lidarEgoLane.minZ = -1.5;
@@ -198,7 +206,7 @@ int main(int argc, const char *argv[]) {
       lidarEgoLane.minReflect = 0.1;
       cropLidarPoints(lidarPoints, lidarEgoLane);
     } else {
-      LidarROI roi; 
+      LidarROI roi;
       roi.minZ = -1.5;
       roi.maxZ = 10;
       roi.minX = 0.0;
@@ -237,11 +245,13 @@ int main(int argc, const char *argv[]) {
        */
       matchBoundingBoxes(*currentFrameIter, *previousFrameIter);
 
-      showYoloDetectionOnImage(*currentFrameIter, yoloConfig, "current");
-      showYoloDetectionOnImage(*previousFrameIter, yoloConfig, "previous");
+      if (visualizeYolo) {
+        showYoloDetectionOnImage(*currentFrameIter, yoloConfig, "current");
+        showYoloDetectionOnImage(*previousFrameIter, yoloConfig, "previous");
+      }
 
       // compute TTC for object in front
-      evalTTC(*currentFrameIter, *previousFrameIter, P_rect_00,R_rect_00,RT,sensorFrameRate,true);
+      evalTTC(lidarTtcMethod, *currentFrameIter, *previousFrameIter, P_rect_00, R_rect_00, RT, sensorFrameRate, true);
     }
   }  // eof loop over all images
 

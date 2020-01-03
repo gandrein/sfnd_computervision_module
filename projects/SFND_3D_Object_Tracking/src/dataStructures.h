@@ -16,15 +16,16 @@ enum class MatcherMethod { BRUTE_FORCE = 0, FLANN };
 
 enum class NeighborSelectorMethod { NN = 0, kNN };  // NearestNeighbor, kNearestNeighbor
 
+enum class LidarTtcMethod { MEDIAN = 0, MEAN, CLUSTER_EUCLID };
+
 struct DataSetConfig {
   std::string basePath;
   std::string prefix;
   std::string fileType;
-  int startIndex = 0;  // first file index to load (assumes Lidar and camera names have identical naming convention)
-  int endIndex = 9;    // last file index to load
-  int indexNameWidth = 4;   // no. of digits which make up the file index (e.g. img-0001.png)
+  int startIndex = 0;      // first file index to load (assumes Lidar and camera names have identical naming convention)
+  int endIndex = 9;        // last file index to load
+  int indexNameWidth = 4;  // no. of digits which make up the file index (e.g. img-0001.png)
   int indexStepSize = 1;
-
 };
 
 struct YoloConfig {
