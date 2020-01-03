@@ -122,6 +122,9 @@ int main(int argc, const char *argv[]) {
 
   DetectorMethod detectorMethod = static_cast<DetectorMethod>(detectorSelected);
   DescriptorMethod descriptorMethod = static_cast<DescriptorMethod>(descriptorSelected);
+  MatcherMethod matcherMethod = static_cast<MatcherMethod>(matcherSelected);
+  DescriptorMetric descriptorMetric = static_cast<DescriptorMetric>(DescriptorMetricSel);
+  NeighborSelectorMethod nnSelector = static_cast<NeighborSelectorMethod>(nnMatcherSelected);
 
   // camera dataset config
   DataSetConfig imgDataInfo;
@@ -214,10 +217,6 @@ int main(int argc, const char *argv[]) {
     if (dataBuffer.size() > 1)  // wait until at least two images have been processed
     {
       auto previousFrameIter = dataBuffer.end() - 2;
-      MatcherMethod matcherMethod = static_cast<MatcherMethod>(matcherSelected);
-      DescriptorMetric descriptorMetric = static_cast<DescriptorMetric>(DescriptorMetricSel);
-      NeighborSelectorMethod nnSelector = static_cast<NeighborSelectorMethod>(nnMatcherSelected);
-
       performFeatureMatching(*currentFrameIter, *previousFrameIter, descriptorMethod, descriptorMetric, matcherMethod,
                              nnSelector, crossCheckBruteForce, visualizeKeypointMatch);
 

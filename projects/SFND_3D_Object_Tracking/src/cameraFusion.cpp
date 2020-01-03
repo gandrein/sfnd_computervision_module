@@ -121,6 +121,14 @@ void show3DObjects(std::vector<BoundingBox> &boundingBoxes, cv::Size worldSize, 
   }  // wait for keyboard input before continuing
 }
 
+void matchBoundingBoxes(DataFrame &currFrame, DataFrame &prevFrame, std::vector<cv::DMatch> &matches) {
+  std::map<int, int> bbBestMatches;
+  
+  // store matches in current data frame
+  currFrame.bbMatches = bbBestMatches;
+  std::cout << "#8 : TRACK 3D OBJECT BOUNDING BOXES done" << std::endl;
+}
+
 // associate a given bounding box with the keypoints it contains
 void clusterKptMatchesWithROI(BoundingBox &boundingBox, std::vector<cv::KeyPoint> &kptsPrev,
                               std::vector<cv::KeyPoint> &kptsCurr, std::vector<cv::DMatch> &kptMatches) {
@@ -136,12 +144,4 @@ void computeTTCCamera(std::vector<cv::KeyPoint> &kptsPrev, std::vector<cv::KeyPo
 void computeTTCLidar(std::vector<LidarPoint> &lidarPointsPrev, std::vector<LidarPoint> &lidarPointsCurr,
                      double frameRate, double &TTC) {
   // ...
-}
-
-void matchBoundingBoxes(DataFrame &currFrame, DataFrame &prevFrame, std::vector<cv::DMatch> &matches) {
-  std::map<int, int> bbBestMatches;
-  // store matches in current data frame
-  currFrame.bbMatches = bbBestMatches;
-
-  std::cout << "#8 : TRACK 3D OBJECT BOUNDING BOXES done" << std::endl;
 }

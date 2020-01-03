@@ -1,6 +1,6 @@
 #include <numeric>
 
-#include "matching2D.h"
+#include "matchingFeatures2D.h"
 #include "utils.h"
 
 void runFeatureDetection(DataFrame &currentFrame, DetectorMethod detector, DescriptorMethod descriptor,
@@ -29,9 +29,8 @@ void performFeatureMatching(DataFrame &currentFrame, DataFrame &previousFrame, D
                             NeighborSelectorMethod nnSelector, bool crossCheckBruteForce, bool visualize) {
   // wait until at least two images have been processed
   std::vector<cv::DMatch> matches;
-  double timeMatcher = matchDescriptors(previousFrame.keypoints, currentFrame.keypoints, previousFrame.descriptors,
-                                        currentFrame.descriptors, matches, descriptorMethod, descriptorMetric,
-                                        matcherMethod, nnSelector, crossCheckBruteForce);
+  double timeMatcher = matchDescriptors(previousFrame.descriptors, currentFrame.descriptors, matches, descriptorMethod,
+                                        descriptorMetric, matcherMethod, nnSelector, crossCheckBruteForce);
   // store matches in current data frame
   currentFrame.kptMatches = matches;
 
@@ -209,10 +208,9 @@ double descKeypoints(DescriptorMethod descriptor, std::vector<cv::KeyPoint> &key
 }
 
 // Find best matches for keypoints in two camera images based on several matching methods
-double matchDescriptors(std::vector<cv::KeyPoint> &kPtsSource, std::vector<cv::KeyPoint> &kPtsRef, cv::Mat &descSource,
-                        cv::Mat &descRef, std::vector<cv::DMatch> &matches, DescriptorMethod descriptorMethod,
-                        DescriptorMetric descrMetric, MatcherMethod matcherMethod, NeighborSelectorMethod nnSelector,
-                        bool crossCheck) {
+double matchDescriptors(cv::Mat &descSource, cv::Mat &descRef, std::vector<cv::DMatch> &matches,
+                        DescriptorMethod descriptorMethod, DescriptorMetric descrMetric, MatcherMethod matcherMethod,
+                        NeighborSelectorMethod nnSelector, bool crossCheck) {
   // configure matcher
   cv::Ptr<cv::DescriptorMatcher> matcher;
   int normType = selectNormTypeMatcher(descriptorMethod, descrMetric);
@@ -252,7 +250,7 @@ double matchDescriptors(std::vector<cv::KeyPoint> &kPtsSource, std::vector<cv::K
   double timeMatching = 0.0;
   switch (nnSelector) {
     case NeighborSelectorMethod::NN: {
-      std::cout << "Using NN match selection ..." << std::endl;
+      std::cout << "Using Nearest Neighbor matching ..." << std::endl;
       double t = (double)cv::getTickCount();
       matcher->match(descSource, descRef, matches);  // Finds the best match for each descriptor in desc1
       timeMatching = ((double)cv::getTickCount() - t) / cv::getTickFrequency();
@@ -261,7 +259,7 @@ double matchDescriptors(std::vector<cv::KeyPoint> &kPtsSource, std::vector<cv::K
       break;
     }
     case NeighborSelectorMethod::kNN: {
-      std::cout << "Using kNN match selection ..." << std::endl;
+      std::cout << "Using k-Nearest Neighbor matching ..." << std::endl;
       // k nearest neighbors (k=2)
       int desiredNumMatches = 2;
       double minDescriptorDistRatio = 0.8;
