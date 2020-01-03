@@ -21,6 +21,7 @@
 #include "objectDetection2D.h"
 #include "tclap/CmdLine.h"
 #include "utils.h"
+#include "ttc.h"
 
 int main(int argc, const char *argv[]) {
   std::string dataPath = "../";
@@ -159,7 +160,6 @@ int main(int argc, const char *argv[]) {
   double sensorFrameRate = 10.0 / imgDataInfo.indexStepSize;  // frames per second for Lidar and camera
   int dataBufferSize = 2;             // no. of images which are held in memory (ring buffer) at the same time
   std::vector<DataFrame> dataBuffer;  // list of data frames which are held in memory at the same time
-  bool visualize = false;             // visualize results
 
   /* MAIN LOOP OVER ALL IMAGES */
   for (size_t imgIndex = 0; imgIndex <= imgDataInfo.endIndex - imgDataInfo.startIndex;
@@ -178,7 +178,7 @@ int main(int argc, const char *argv[]) {
     // Detect and classify objectst with YOLO
     yoloConfig.confidenceThreshold = 0.2;
     yoloConfig.nmsThreshold = 0.4;
-    detectObjects(currentFrameIter->cameraImg, currentFrameIter->boundingBoxes, yoloConfig, visualizeYolo);
+    detectObjects(*currentFrameIter, yoloConfig, false);
 
     // Load 3D Lidar points from file
     std::string lidarFullFilename = lidarDataInfo.basePath + lidarDataInfo.prefix +
@@ -187,14 +187,26 @@ int main(int argc, const char *argv[]) {
     loadLidarFromFile(lidarPoints, lidarFullFilename);
 
     // Crop lidar points - remove Lidar points based on distance properties
-    LidarROI lidarEgoLane;  // focus on ego lane
-    lidarEgoLane.minZ = -1.5;
-    lidarEgoLane.maxZ = -0.9;
-    lidarEgoLane.minX = 2.0;
-    lidarEgoLane.maxX = 20.0;
-    lidarEgoLane.maxY = 2.0;
-    lidarEgoLane.minReflect = 0.1;
-    cropLidarPoints(lidarPoints, lidarEgoLane);
+    bool enableEgoLaneLidarCropping = false; // for debugging
+    if (enableEgoLaneLidarCropping) {
+      LidarROI lidarEgoLane;  // focus on ego lane
+      lidarEgoLane.minZ = -1.5;
+      lidarEgoLane.maxZ = -0.9;
+      lidarEgoLane.minX = 2.0;
+      lidarEgoLane.maxX = 20.0;
+      lidarEgoLane.maxY = 2.0;
+      lidarEgoLane.minReflect = 0.1;
+      cropLidarPoints(lidarPoints, lidarEgoLane);
+    } else {
+      LidarROI roi; 
+      roi.minZ = -1.5;
+      roi.maxZ = 10;
+      roi.minX = 0.0;
+      roi.maxX = 25.0;
+      roi.maxY = 20.0;
+      roi.minReflect = 0.0;
+      cropLidarPoints(lidarPoints, roi);
+    }
     currentFrameIter->lidarPoints = lidarPoints;
 
     /* Associate Lidar points with camera-based ROI
@@ -207,7 +219,7 @@ int main(int argc, const char *argv[]) {
 
     // Visualize 3D objects
     if (visualizeFusedData) {
-      show3DObjects(currentFrameIter->boundingBoxes, cv::Size(4.0, 20.0), cv::Size(2000, 2000), visualizeFusedData);
+      show3DObjects(currentFrameIter->boundingBoxes, cv::Size(10.0, 25.0), cv::Size(2000, 2000), visualizeFusedData);
     }
 
     // Perform features detection and run feature descriptor algorithms
@@ -220,75 +232,16 @@ int main(int argc, const char *argv[]) {
       performFeatureMatching(*currentFrameIter, *previousFrameIter, descriptorMethod, descriptorMetric, matcherMethod,
                              nnSelector, crossCheckBruteForce, visualizeKeypointMatch);
 
-      continue;
-
       /* Track 3D object bounding boxes
        *  associate bounding boxes between current and previous frame using keypoint matches
        */
       matchBoundingBoxes(*currentFrameIter, *previousFrameIter);
 
-      /* COMPUTE TTC ON OBJECT IN FRONT */
-      // loop over all BB match pairs
-      for (auto it1 = currentFrameIter->bbMatches.begin(); it1 != currentFrameIter->bbMatches.end(); ++it1) {
-        // find bounding boxes associates with current match
-        BoundingBox *prevBB, *currBB;
-        for (auto it2 = currentFrameIter->boundingBoxes.begin(); it2 != currentFrameIter->boundingBoxes.end(); ++it2) {
-          if (it1->second == it2->boxID)  // check wether current match partner corresponds to this BB
-          {
-            currBB = &(*it2);
-          }
-        }
+      showYoloDetectionOnImage(*currentFrameIter, yoloConfig, "current");
+      showYoloDetectionOnImage(*previousFrameIter, yoloConfig, "previous");
 
-        for (auto it2 = previousFrameIter->boundingBoxes.begin(); it2 != previousFrameIter->boundingBoxes.end();
-             ++it2) {
-          if (it1->first == it2->boxID)  // check wether current match partner corresponds to this BB
-          {
-            prevBB = &(*it2);
-          }
-        }
-
-        // compute TTC for current match
-        if (currBB->lidarPoints.size() > 0 &&
-            prevBB->lidarPoints.size() > 0)  // only compute TTC if we have Lidar points
-        {
-          //// STUDENT ASSIGNMENT
-          //// TASK FP.2 -> compute time-to-collision based on Lidar data (implement -> computeTTCLidar)
-          double ttcLidar;
-          computeTTCLidar(prevBB->lidarPoints, currBB->lidarPoints, sensorFrameRate, ttcLidar);
-          //// EOF STUDENT ASSIGNMENT
-
-          //// STUDENT ASSIGNMENT
-          //// TASK FP.3 -> assign enclosed keypoint matches to bounding box (implement -> clusterKptMatchesWithROI)
-          //// TASK FP.4 -> compute time-to-collision based on camera (implement -> computeTTCCamera)
-          double ttcCamera;
-          clusterKptMatchesWithROI(*currBB, previousFrameIter->keypoints, currentFrameIter->keypoints,
-                                   currentFrameIter->kptMatches);
-          computeTTCCamera(previousFrameIter->keypoints, currentFrameIter->keypoints, currBB->kptMatches,
-                           sensorFrameRate, ttcCamera);
-          //// EOF STUDENT ASSIGNMENT
-
-          visualize = true;
-          if (visualize) {
-            cv::Mat visImg = currentFrameIter->cameraImg.clone();
-            showLidarImgOverlay(visImg, currBB->lidarPoints, P_rect_00, R_rect_00, RT, &visImg);
-            cv::rectangle(visImg, cv::Point(currBB->roi.x, currBB->roi.y),
-                          cv::Point(currBB->roi.x + currBB->roi.width, currBB->roi.y + currBB->roi.height),
-                          cv::Scalar(0, 255, 0), 2);
-
-            char str[200];
-            sprintf(str, "TTC Lidar : %f s, TTC Camera : %f s", ttcLidar, ttcCamera);
-            putText(visImg, str, cv::Point2f(80, 50), cv::FONT_HERSHEY_PLAIN, 2, cv::Scalar(0, 0, 255));
-
-            std::string windowName = "Final Results : TTC";
-            cv::namedWindow(windowName, 4);
-            cv::imshow(windowName, visImg);
-            std::cout << "Press key to continue to next frame" << std::endl;
-            cv::waitKey(0);
-          }
-          visualize = false;
-
-        }  // eof TTC computation
-      }    // eof loop over all BB matches
+      // compute TTC for object in front
+      evalTTC(*currentFrameIter, *previousFrameIter, P_rect_00,R_rect_00,RT,sensorFrameRate,true);
     }
   }  // eof loop over all images
 

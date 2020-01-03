@@ -13,13 +13,7 @@ using namespace std;
 
 // detects objects in an image using the YOLO library and a set of pre-trained objects from the COCO database;
 // a set of 80 classes is listed in "coco.names" and pre-trained weights are stored in "yolov3.weights"
-void detectObjects(cv::Mat& img, std::vector<BoundingBox>& bBoxes, YoloConfig yoloConfig, bool visualize) {
-  // load class names from file
-  vector<string> classes;
-  ifstream ifs(yoloConfig.nnClassFile.c_str());
-  string line;
-  while (getline(ifs, line)) classes.push_back(line);
-
+void detectObjects(DataFrame& frameData, YoloConfig yoloConfig, bool visualize) {
   // load neural network
   cv::dnn::Net net = cv::dnn::readNetFromDarknet(yoloConfig.modelWeightsCfg, yoloConfig.modelWeightsFile);
   net.setPreferableBackend(cv::dnn::DNN_BACKEND_OPENCV);
@@ -33,7 +27,7 @@ void detectObjects(cv::Mat& img, std::vector<BoundingBox>& bBoxes, YoloConfig yo
   cv::Scalar mean = cv::Scalar(0, 0, 0);
   bool swapRB = false;
   bool crop = false;
-  cv::dnn::blobFromImage(img, blob, scalefactor, size, mean, swapRB, crop);
+  cv::dnn::blobFromImage(frameData.cameraImg, blob, scalefactor, size, mean, swapRB, crop);
 
   // Get names of output layers
   vector<cv::String> names;
@@ -65,10 +59,10 @@ void detectObjects(cv::Mat& img, std::vector<BoundingBox>& bBoxes, YoloConfig yo
       if (confidence > yoloConfig.confidenceThreshold) {
         cv::Rect box;
         int cx, cy;
-        cx = (int)(data[0] * img.cols);
-        cy = (int)(data[1] * img.rows);
-        box.width = (int)(data[2] * img.cols);
-        box.height = (int)(data[3] * img.rows);
+        cx = (int)(data[0] * frameData.cameraImg.cols);
+        cy = (int)(data[1] * frameData.cameraImg.rows);
+        box.width = (int)(data[2] * frameData.cameraImg.cols);
+        box.height = (int)(data[3] * frameData.cameraImg.rows);
         box.x = cx - box.width / 2;   // left
         box.y = cy - box.height / 2;  // top
 
@@ -89,42 +83,14 @@ void detectObjects(cv::Mat& img, std::vector<BoundingBox>& bBoxes, YoloConfig yo
     bBox.roi = boxes[*it];
     bBox.classID = classIds[*it];
     bBox.confidence = confidences[*it];
-    bBox.boxID = (int)bBoxes.size();  // zero-based unique identifier for this bounding box
+    bBox.boxID = (int)frameData.boundingBoxes.size();  // zero-based unique identifier for this bounding box
 
-    bBoxes.push_back(bBox);
+    frameData.boundingBoxes.push_back(bBox);
   }
 
   // show results
   if (visualize) {
-    cv::Mat visImg = img.clone();
-    for (auto it = bBoxes.begin(); it != bBoxes.end(); ++it) {
-      // Draw rectangle displaying the bounding box
-      int top, left, width, height;
-      top = (*it).roi.y;
-      left = (*it).roi.x;
-      width = (*it).roi.width;
-      height = (*it).roi.height;
-      cv::rectangle(visImg, cv::Point(left, top), cv::Point(left + width, top + height), cv::Scalar(0, 255, 0), 2);
-
-      string label = cv::format("%.2f", (*it).confidence);
-      label = classes[((*it).classID)] + ":" + label;
-
-      // Display label at the top of the bounding box
-      int baseLine;
-      cv::Size labelSize = getTextSize(label, cv::FONT_ITALIC, 0.5, 1, &baseLine);
-      top = max(top, labelSize.height);
-      rectangle(visImg, cv::Point(left, top - round(1.5 * labelSize.height)),
-                cv::Point(left + round(1.5 * labelSize.width), top + baseLine), cv::Scalar(255, 255, 255), cv::FILLED);
-      cv::putText(visImg, label, cv::Point(left, top), cv::FONT_ITALIC, 0.75, cv::Scalar(0, 0, 0), 1);
-    }
-
-    std::cout << "#2 : DETECT & CLASSIFY OBJECTS done" << std::endl;
-
-    string windowName = "Object classification";
-    cv::namedWindow(windowName, 1);
-    cv::imshow(windowName, visImg);
-    while ((cv::waitKey() & 0xEFFFFF) != 27) {
-      continue;
-    }  // wait for keyboard input before continuing
+    showYoloDetectionOnImage(frameData, yoloConfig);
   }
+  std::cout << "#2 : DETECT & CLASSIFY OBJECTS done" << std::endl;
 }

@@ -8,6 +8,6 @@
 #include "dataStructures.h"
 #include "utils.h"
 
-void detectObjects(cv::Mat& img, std::vector<BoundingBox>& bBoxes, YoloConfig yoloConfig, bool visualize);
+void detectObjects(DataFrame& frameData, YoloConfig yoloConfig, bool visualize);
 
 #endif /* OBJECT_DETECTION_H_ */

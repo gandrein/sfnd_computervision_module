@@ -24,6 +24,8 @@ void filterKeypointsROI(cv::Rect &rectangle, std::vector<cv::KeyPoint> &keypoint
 
 void filterKeypointsNumber(DetectorMethod detector, std::vector<cv::KeyPoint> &keypoints, size_t maxNumber);
 
+void showYoloDetectionOnImage(DataFrame& frameData, YoloConfig yoloConfig, std::string labelPostFix = "");
+
 inline std::string DetectorMethodToString(const DetectorMethod &v) {
   switch (v) {
     case DetectorMethod::SHITOMASI:
@@ -114,4 +116,6 @@ inline std::string MatcherMethodToString(int value) { return MatcherMethodToStri
 inline std::string NeighborSelectorMethodToString(int value) {
   return NeighborSelectorMethodToString(static_cast<NeighborSelectorMethod>(value));
 }
+
+void showMultimapContent(std::multimap<int, int>& myMap);
 #endif

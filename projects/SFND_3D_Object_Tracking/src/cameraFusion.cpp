@@ -7,8 +7,18 @@
 
 #include "cameraFusion.h"
 #include "dataStructures.h"
+#include "utils.h"
 
 using namespace std;
+
+BoundingBox* findBoundingBoxByID(std::vector<BoundingBox>& boundingBoxes, int boxId) {
+    for (auto it = boundingBoxes.begin(); it != boundingBoxes.end(); ++it) {
+      if (boxId == it->boxID)  // check wether current match partner corresponds to this BB
+      {
+        return &(*it);
+      }
+    }
+}
 
 // Create groups of Lidar points whose projection into the camera falls into the same bounding box
 void clusterLidarWithROI(std::vector<BoundingBox> &boundingBoxes, std::vector<LidarPoint> &lidarPoints,
@@ -114,16 +124,94 @@ void show3DObjects(std::vector<BoundingBox> &boundingBoxes, cv::Size worldSize, 
   string windowName = "3D Objects";
   cv::namedWindow(windowName, cv::WINDOW_NORMAL);
   cv::imshow(windowName, topviewImg);
-  cv::resizeWindow(windowName, 800, 600);  // need this for Arch i3 otherwise it is not shown properly
+  cv::resizeWindow(windowName, 200, 200);  // need this for Arch i3 otherwise it is not shown properly
 
   while ((cv::waitKey() & 0xEFFFFF) != 27) {
     continue;
   }  // wait for keyboard input before continuing
 }
 
-void matchBoundingBoxes(DataFrame &currFrame, DataFrame &prevFrame, std::vector<cv::DMatch> &matches) {
-  std::map<int, int> bbBestMatches;
-  
+void matchBoundingBoxes(DataFrame &currFrame, DataFrame &prevFrame) {
+  /* NOTE
+   * A DMatch contains a query-index element and a train-index element, where
+   *  - the keypoints in the initial (previous) frame are indexed by queryIdx
+   *  - the keypoints in the current frame are indexed by trainIdx
+   */
+  std::map<int, int> bbBestMatches{};
+  // Multimap to store associated bounding boxes between current and previous frame based on keypoint matches
+  std::multimap<int, int> bboxesMatchIds{};
+  for (auto match : currFrame.kptMatches) {
+    cv::KeyPoint prevKeypoint = prevFrame.keypoints[match.queryIdx];
+    cv::KeyPoint curKeypoint = currFrame.keypoints[match.trainIdx];
+
+    for (auto currBox : currFrame.boundingBoxes) {
+      if (currBox.roi.contains(curKeypoint.pt)) {
+        for (auto prevBox : prevFrame.boundingBoxes) {
+          if (prevBox.roi.contains(prevKeypoint.pt)) {
+            bboxesMatchIds.insert({currBox.boxID, prevBox.boxID});
+            // std::cout << "Found association between currFrame box: " << currBox.boxID
+            //           << " and prevFrame box: " << prevBox.boxID << std::endl;
+          }
+        }
+      }
+    }
+  }
+
+  // Print multimap content
+  // showMultimapContent(bboxesMatchIds);
+
+  bool debugPrintBoxAssociations = false;
+  std::vector<std::vector<int>> boxMatchCounts;  // for debugging
+  size_t prevFrameNumBoxes = prevFrame.boundingBoxes.size();
+
+  // Iterate over current frame boxes and count for each box the most associated box from the previous frame
+  for (auto currBox : currFrame.boundingBoxes) {
+    // Get all previous frame boxIDs which are associated to this current frame boxID
+    auto prevFrameMatchedBoxes = bboxesMatchIds.equal_range(currBox.boxID);
+
+    // Count the number of times each box of previous frame is matched against this box of the current frame
+    std::vector<int> prevFrameBoxMatchesIndex(prevFrameNumBoxes, 0);
+    for (std::multimap<int, int>::iterator it = prevFrameMatchedBoxes.first; it != prevFrameMatchedBoxes.second; ++it) {
+      prevFrameBoxMatchesIndex[it->second] += 1;
+    }
+    boxMatchCounts.push_back(prevFrameBoxMatchesIndex);
+
+    // Get the index of the box from the previous frame that is associated the most with this current boxID
+    int boxIndex = std::distance(prevFrameBoxMatchesIndex.begin(),
+                                 std::max_element(prevFrameBoxMatchesIndex.begin(), prevFrameBoxMatchesIndex.end()));
+    if (prevFrameBoxMatchesIndex[boxIndex] != 0) {
+      bbBestMatches.insert({prevFrame.boundingBoxes[boxIndex].boxID, currBox.boxID});
+      std::cout << " >>> Current boxID: " << currBox.boxID
+                << ", most associated with previous frame boxID: " << prevFrame.boundingBoxes[boxIndex].boxID
+                << std::endl;
+    } else {
+      std::cout << " >>> Current boxID no match found with previous boxes" << std::endl;
+    }
+
+    if (debugPrintBoxAssociations) {
+      std::cout << currBox.boxID << " =>";
+      for (std::multimap<int, int>::iterator it = prevFrameMatchedBoxes.first; it != prevFrameMatchedBoxes.second;
+           ++it) {
+        std::cout << ' ' << it->second;
+      }
+      std::cout << '\n';
+      for (size_t i = 0; i < prevFrameBoxMatchesIndex.size(); i++) {
+        std::cout << prevFrameBoxMatchesIndex[i] << ", ";
+      }
+      std::cout << '\n';
+    }
+  }
+
+  // Print overall mapped bounding box counts
+  if (debugPrintBoxAssociations) {
+    for (int i = 0; i < boxMatchCounts.size(); i++) {
+      for (int j = 0; j < prevFrameNumBoxes; j++) {
+        std::cout << boxMatchCounts[i][j] << ", ";
+      }
+      std::cout << '\n';
+    }
+  }
+
   // store matches in current data frame
   currFrame.bbMatches = bbBestMatches;
   std::cout << "#8 : TRACK 3D OBJECT BOUNDING BOXES done" << std::endl;
@@ -135,13 +223,3 @@ void clusterKptMatchesWithROI(BoundingBox &boundingBox, std::vector<cv::KeyPoint
   // ...
 }
 
-// Compute time-to-collision (TTC) based on keypoint correspondences in successive images
-void computeTTCCamera(std::vector<cv::KeyPoint> &kptsPrev, std::vector<cv::KeyPoint> &kptsCurr,
-                      std::vector<cv::DMatch> kptMatches, double frameRate, double &TTC, cv::Mat *visImg) {
-  // ...
-}
-
-void computeTTCLidar(std::vector<LidarPoint> &lidarPointsPrev, std::vector<LidarPoint> &lidarPointsCurr,
-                     double frameRate, double &TTC) {
-  // ...
-}
