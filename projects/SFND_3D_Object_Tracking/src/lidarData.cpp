@@ -2,11 +2,10 @@
 #include <algorithm>
 #include <iostream>
 #include <numeric>
+#include <opencv2/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include "lidarData.h"
-
-using namespace std;
 
 double computeMedianLidarX(std::vector<LidarPoint> &vals) {
   size_t size = vals.size();
@@ -43,7 +42,7 @@ void cropLidarPoints(std::vector<LidarPoint> &lidarPoints, LidarROI &roi) {
 }
 
 // Load Lidar points from a given location and store them in a vector
-void loadLidarFromFile(vector<LidarPoint> &lidarPoints, string filename) {
+void loadLidarFromFile(std::vector<LidarPoint> &lidarPoints, std::string filename) {
   // allocate 4 MB buffer (only ~130*4*4 KB are needed)
   unsigned long num = 1000000;
   float *data = (float *)malloc(num * sizeof(float));
@@ -55,7 +54,7 @@ void loadLidarFromFile(vector<LidarPoint> &lidarPoints, string filename) {
   float *pr = data + 3;
 
   // load point cloud
-  FILE *stream;
+  std::FILE *stream;
   stream = fopen(filename.c_str(), "rb");
   num = fread(data, sizeof(float), num, stream) / 4;
 
@@ -99,7 +98,7 @@ void showLidarTopview(std::vector<LidarPoint> &lidarPoints, cv::Size worldSize, 
   }
 
   // display image
-  string windowName = "Top-View Perspective of LiDAR data";
+  std::string windowName = "opencv: Top-View Perspective of LiDAR data";
   cv::namedWindow(windowName, 2);
   cv::imshow(windowName, topviewImg);
   if (bWait) {
@@ -139,8 +138,8 @@ void showLidarImgOverlay(cv::Mat &img, std::vector<LidarPoint> &lidarPoints, cv:
     pt.y = Y.at<double>(1, 0) / Y.at<double>(0, 2);
 
     float val = it->x;
-    int red = min(255, (int)(255 * abs((val - maxVal) / maxVal)));
-    int green = min(255, (int)(255 * (1 - abs((val - maxVal) / maxVal))));
+    int red = std::min(255, (int)(255 * abs((val - maxVal) / maxVal)));
+    int green = std::min(255, (int)(255 * (1 - abs((val - maxVal) / maxVal))));
     cv::circle(overlay, pt, 5, cv::Scalar(0, green, red), -1);
   }
 
@@ -149,7 +148,7 @@ void showLidarImgOverlay(cv::Mat &img, std::vector<LidarPoint> &lidarPoints, cv:
 
   // return augmented image or wait if no image has been provided
   if (extVisImg == nullptr) {
-    string windowName = "LiDAR data on image overlay";
+    std::string windowName = "opencv: LiDAR data on image overlay";
     cv::namedWindow(windowName, 3);
     cv::imshow(windowName, visImg);
     cv::waitKey(0);  // wait for key to be pressed

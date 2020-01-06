@@ -121,7 +121,7 @@ void show3DObjects(std::vector<BoundingBox> &boundingBoxes, cv::Size worldSize, 
   }
 
   // display image
-  string windowName = "3D Objects";
+  string windowName = "opencv: 3D Objects";
   cv::namedWindow(windowName, cv::WINDOW_NORMAL);
   cv::imshow(windowName, topviewImg);
   cv::resizeWindow(windowName, 200, 200);  // need this for Arch i3 otherwise it is not shown properly

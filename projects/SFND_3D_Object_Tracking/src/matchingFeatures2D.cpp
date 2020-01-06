@@ -41,7 +41,7 @@ void performFeatureMatching(DataFrame &currentFrame, DataFrame &previousFrame, D
                     matches, matchImg, cv::Scalar::all(-1), cv::Scalar::all(-1), std::vector<char>(),
                     cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
 
-    std::string windowName = "Matching keypoints between two camera images";
+    std::string windowName = "opencv: Matching keypoints between two camera images";
     cv::namedWindow(windowName, 7);
     cv::imshow(windowName, matchImg);
     std::cout << "Press key to continue to next image" << std::endl;
@@ -70,9 +70,9 @@ double detectKeypoints(DetectorMethod detector, std::vector<cv::KeyPoint> &keypo
   if (visualize) {
     cv::Mat visImage = img.clone();
     cv::drawKeypoints(img, keypoints, visImage, cv::Scalar::all(-1), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
-    std::string windowName = DetectorMethodToString(detector) + " Corner Detector Results";
+    std::string windowName = "opencv: " + DetectorMethodToString(detector) + " Corner Detector Results";
     cv::namedWindow(windowName, 6);
-    imshow(windowName, visImage);
+    cv::imshow(windowName, visImage);
     while ((cv::waitKey() & 0xEFFFFF) != 27) {
       continue;
     }  // wait for keyboard input before continuing
@@ -155,8 +155,8 @@ double detKeypointsModern(DetectorMethod detector, std::vector<cv::KeyPoint> &ke
   detectorPtr->detect(img, keypoints);
   double t = static_cast<double>((cv::getTickCount() - tick)) / cv::getTickFrequency();
   std::string detectorName = DetectorMethodToString(detector);
-  std::cout << "  >>> " << detectorName << " with n= " << keypoints.size() << " keypoints in " << 1000 * t / 1.0 << " ms"
-            << std::endl;
+  std::cout << "  >>> " << detectorName << " with n= " << keypoints.size() << " keypoints in " << 1000 * t / 1.0
+            << " ms" << std::endl;
   return t;
 }
 
@@ -200,8 +200,8 @@ double descKeypoints(DescriptorMethod descriptor, std::vector<cv::KeyPoint> &key
   double t = (double)cv::getTickCount();
   extractor->compute(img, keypoints, descriptors);
   double timeDescriptor = ((double)cv::getTickCount() - t) / cv::getTickFrequency();
-  std::cout << "  >>> " << DescriptorMethodToString(descriptor) << " descriptor extraction in " << 1000 * timeDescriptor / 1.0
-            << " ms" << std::endl;
+  std::cout << "  >>> " << DescriptorMethodToString(descriptor) << " descriptor extraction in "
+            << 1000 * timeDescriptor / 1.0 << " ms" << std::endl;
   return timeDescriptor;
 }
 

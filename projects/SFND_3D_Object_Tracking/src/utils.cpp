@@ -152,7 +152,7 @@ void showYoloDetectionOnImage(DataFrame &frameData, YoloConfig yoloConfig, std::
     cv::putText(visImg, label, cv::Point(left, top), cv::FONT_ITALIC, 0.75, cv::Scalar(0, 0, 0), 1);
   }
 
-  std::string windowName = "Object classification | " + labelPostFix;
+  std::string windowName = "opencv: Object classification | " + labelPostFix;
   cv::namedWindow(windowName, 1);
   cv::imshow(windowName, visImg);
   // while ((cv::waitKey() & 0xEFFFFF) != 27) {

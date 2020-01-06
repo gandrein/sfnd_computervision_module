@@ -37,7 +37,7 @@ void evalTTC(LidarTtcMethod lidarTtcMethod, DataFrame &currFrame, DataFrame &pre
         sprintf(str, "TTC Lidar : %f s, TTC Camera : %f s", ttcLidar, ttcCamera);
         putText(visImg, str, cv::Point2f(80, 50), cv::FONT_HERSHEY_PLAIN, 2, cv::Scalar(0, 0, 255));
 
-        std::string windowName = "Final Results : TTC";
+        std::string windowName = "opencv: Final Results-TTC";
         cv::namedWindow(windowName, 4);
         cv::imshow(windowName, visImg);
         std::cout << "Press ESC key to continue to next frame" << std::endl;
