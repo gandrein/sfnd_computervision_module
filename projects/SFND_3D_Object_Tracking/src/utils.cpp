@@ -12,7 +12,8 @@
 #include "utils.h"
 
 void loadKittiCalibrationData(cv::Mat &P_rect_00, cv::Mat &R_rect_00, cv::Mat &RT) {
-  // ANG: THESE values should be parsed/read from the KITTI camera calibration files
+  // ANG: THESE values should be parsed/read from the KITTI camera calibration
+  // files
   RT.at<double>(0, 0) = 7.533745e-03;
   RT.at<double>(0, 1) = -9.999714e-01;
   RT.at<double>(0, 2) = -6.166020e-04;
@@ -74,7 +75,8 @@ std::string getDatasetImageName(DataSetConfig &dataInfo, size_t imgIndex) {
 }
 
 void pushToBuffer(std::vector<DataFrame> &buffer, DataFrame &newFrame) {
-  int dataBufferSize = 2;  // no. of images which are held in memory (ring buffer) at the same time
+  int dataBufferSize = 2;  // no. of images which are held in memory (ring
+                           // buffer) at the same time
   if (buffer.size() < dataBufferSize) {
     buffer.emplace_back(newFrame);
     std::cout << "Initializing buffer; Buffer size is: " << buffer.size() << std::endl;
@@ -90,7 +92,8 @@ void pushToBuffer(std::vector<DataFrame> &buffer, DataFrame &newFrame) {
 
 bool isInsideROI(cv::KeyPoint &kpt, cv::Rect &rectangle) {
   cv::Point2f point = kpt.pt;
-  // std::cout << "Point has x: " << keypoint.x << ", y:" << keypoint.y << std::endl;
+  // std::cout << "Point has x: " << keypoint.x << ", y:" << keypoint.y <<
+  // std::endl;
   cv::Point2f topLeft(rectangle.x, rectangle.y);
   cv::Point2f topRight(rectangle.x + rectangle.width, rectangle.y);
   cv::Point2f bottomLeft(rectangle.x, rectangle.y + rectangle.height);
@@ -102,15 +105,10 @@ bool isInsideROI(cv::KeyPoint &kpt, cv::Rect &rectangle) {
   return false;
 }
 
-void filterKeypointsROI(cv::Rect &rectangle, std::vector<cv::KeyPoint> &keypoints) {
-  auto newEnd = std::remove_if(keypoints.begin(), keypoints.end(),
-                               [&rectangle](cv::KeyPoint kpt) { return !isInsideROI(kpt, rectangle); });
-  keypoints.erase(newEnd, keypoints.end());
-}
-
 void filterKeypointsNumber(DetectorMethod detector, std::vector<cv::KeyPoint> &keypoints, size_t maxNumber) {
   if (detector == DetectorMethod::SHITOMASI || detector == DetectorMethod::HARRIS) {
-    // there is no response info, so keep the first 50 as they are sorted in descending quality order
+    // there is no response info, so keep the first 50 as they are sorted in
+    // descending quality order
     keypoints.erase(keypoints.begin() + maxNumber, keypoints.end());
   } else {
     //   DetectorMethod::FAST:
@@ -167,3 +165,34 @@ void showMultimapContent(std::multimap<int, int> &myMap) {
   std::cout << '\n';
 }
 
+
+NormalDistribution evalNormalDistributionParams(std::vector<double> &vals) {
+  NormalDistribution ndist;
+  double sum = std::accumulate(vals.begin(), vals.end(), 0.0,
+                               [](int sum, const double val) { return sum + val; });
+  double mean = sum / vals.size();
+
+  std::vector<double> diff(vals.size());
+  std::transform(vals.begin(), vals.end(), diff.begin(),
+                 [mean](double &val) { return val - mean; });
+  double sq_sum = std::inner_product(diff.begin(), diff.end(), diff.begin(), 0.0);
+  double stddev = std::sqrt(sq_sum / vals.size());
+  ndist.mean = mean;
+  ndist.stddev = stddev;
+  return ndist;
+}
+
+void drawMatches(std::vector<cv::DMatch> &matches, DataFrame &currentFrame, DataFrame &previousFrame, std::string windowTitle) {
+	cv::Mat matchImg = currentFrame.cameraImg.clone();
+	cv::drawMatches(previousFrame.cameraImg, previousFrame.keypoints, currentFrame.cameraImg, currentFrame.keypoints,
+					matches, matchImg, cv::Scalar::all(-1), cv::Scalar::all(-1), std::vector<char>(),
+					cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
+
+	std::string windowName = "opencv: " + windowTitle;;
+	cv::namedWindow(windowName, 7);
+	cv::imshow(windowName, matchImg);
+	std::cout << "Press key to continue to next image" << std::endl;
+	while ((cv::waitKey() & 0xEFFFFF) != 27) {
+		continue;
+	}  // wait for keyboard input before continuing
+}

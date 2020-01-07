@@ -6,8 +6,9 @@
 #include "dataStructures.h"
 #include "utils.h"
 
-void evalTTC(LidarTtcMethod lidarTtcMethod, DataFrame &currFrame, DataFrame &prevFrame, cv::Mat &P_rect_00, cv::Mat &R_rect_00, cv::Mat &RT,
-             double sensorFrameRate, bool visualize);
+void evalTTC(LidarTtcMethod lidarTtcMethod, KptMatchesClusterConf kptClusterConfig, DataFrame &currFrame,
+             DataFrame &prevFrame, cv::Mat &P_rect_00, cv::Mat &R_rect_00, cv::Mat &RT, double sensorFrameRate,
+             bool visualize);
 
 double computeTTCLidar(LidarTtcMethod ttcMethod, std::vector<LidarPoint> &lidarPointsPrev,
                        std::vector<LidarPoint> &lidarPointsCurr, double frameRate);
@@ -16,7 +17,7 @@ double computeTTCLidarMedianBased(std::vector<LidarPoint> &lidarPointsPrev, std:
                                   double frameRate);
 
 double computeTTCLidarMeanBased(std::vector<LidarPoint> &lidarPointsPrev, std::vector<LidarPoint> &lidarPointsCurr,
-                                  double lidarFrameRate);
+                                double lidarFrameRate);
 
 double computeTTCLidarClusterBased(std::vector<LidarPoint> &lidarPointsPrev, std::vector<LidarPoint> &lidarPointsCurr,
                                    double frameRate);

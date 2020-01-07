@@ -9,12 +9,21 @@
 #include "dataStructures.h"
 
 void clusterLidarWithROI(std::vector<BoundingBox> &boundingBoxes, std::vector<LidarPoint> &lidarPoints,
-                         float shrinkFactor, cv::Mat &P_rect_xx, cv::Mat &R_rect_xx, cv::Mat &RT);
-void clusterKptMatchesWithROI(BoundingBox &boundingBox, std::vector<cv::KeyPoint> &kptsPrev,
-                              std::vector<cv::KeyPoint> &kptsCurr, std::vector<cv::DMatch> &kptMatches);
+						 float shrinkFactor, cv::Mat &P_rect_xx, cv::Mat &R_rect_xx, cv::Mat &RT);
+
+void clusterKptMatchesWithROI(KptMatchesClusterConf clusterConf, BoundingBox &boundingBox,
+							  std::vector<cv::DMatch> &kptMatches, DataFrame &prevFrame, DataFrame &currFrame,
+							  bool visualize);
+
+std::vector<cv::DMatch> getEnclosedMatches(BoundingBox &boundingBox, std::vector<cv::KeyPoint> &kptsPrev,
+										   std::vector<cv::KeyPoint> &kptsCurr, std::vector<cv::DMatch> &kptMatches);
+
+std::vector<double> evalDistanceOfKptMatches(std::vector<cv::KeyPoint> &kptsPrev, std::vector<cv::KeyPoint> &kptsCurr,
+											 std::vector<cv::DMatch> &kptMatches);
+
 void matchBoundingBoxes(DataFrame &currFrame, DataFrame &prevFrame);
 
-BoundingBox* findBoundingBoxByID(std::vector<BoundingBox>& boundingBoxes, int boxId);
+BoundingBox *findBoundingBoxByID(std::vector<BoundingBox> &boundingBoxes, int boxId);
 
 void show3DObjects(std::vector<BoundingBox> &boundingBoxes, cv::Size worldSize, cv::Size imageSize, bool bWait = true);
 

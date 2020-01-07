@@ -18,6 +18,21 @@ enum class NeighborSelectorMethod { NN = 0, kNN };  // NearestNeighbor, kNearest
 
 enum class LidarTtcMethod { MEDIAN = 0, MEAN, CLUSTER_EUCLID };
 
+enum class KptMatchesClusterDistanceMethod {THRESHOLD=0, STDEV};
+
+struct NormalDistribution {
+  float mean;
+  float stddev;
+};
+
+struct KptMatchesClusterConf {
+  KptMatchesClusterDistanceMethod method;
+  union {
+    double threshold;
+    double numStddev;
+  };
+};
+
 struct DataSetConfig {
   std::string basePath;
   std::string prefix;
