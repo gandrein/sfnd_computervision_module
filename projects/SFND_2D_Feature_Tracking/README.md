@@ -16,7 +16,7 @@ The assignment and the code is based on the [SFND_2D_Feature_Tracking](https://g
 
 For this project OpenCV (tag 4.1.2) and the additional modules in OpenCV_contrib (tag 4.1.2) are required.
 
-OpenCV was build from the source metioned above using the following build flags
+OpenCV was build from the source mentioned above using the following build flags
 ```
 cmake -D CMAKE_BUILD_TYPE=RELEASE \
      -D INSTALL_C_EXAMPLES=OFF \
@@ -146,7 +146,7 @@ Note that the following methods use a fixed pre-defined neighborhood size:
 
 The table below lists the mean and standard deviation of the neighborhood size computed for the other remaining detector methods. The mean and standard deviations are computed only for the points that fall in the ROI of the preceding vehicle.
 
-_**Keypoints neighboorhood size distribution**_
+_**Keypoints neighborhood size distribution**_
 
 |#Image  | AKAZE (mean / std)	| BRISK	(mean / std) | ORB (mean / std) | SIFT (mean / std) |
 |:------:|:--------------------:|:------------------:|:----------------:|:-----------------:|
