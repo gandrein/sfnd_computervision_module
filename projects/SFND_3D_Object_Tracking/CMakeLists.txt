@@ -10,7 +10,7 @@ project(camera_lidar_fusion_ttc)
 
 find_package(OpenCV 4.1 REQUIRED)
 
-set(DEPS "${CMAKE_CURRENT_SOURCE_DIR}/deps")
+set(LIBS "${CMAKE_CURRENT_SOURCE_DIR}/libs")
 
 link_directories(${OpenCV_LIBRARY_DIRS})
 add_definitions(${OpenCV_DEFINITIONS})
@@ -26,6 +26,6 @@ add_executable(3D_object_tracking
             src/utils.cpp)
 target_link_libraries(3D_object_tracking ${OpenCV_LIBRARIES})
 
-target_include_directories(3D_object_tracking PRIVATE 
+target_include_directories(3D_object_tracking PRIVATE
             ${OpenCV_INCLUDE_DIRS}
-            ${DEPS}/tclap-1.2.2)
+            ${LIBS}/tclap-1.2.2)
