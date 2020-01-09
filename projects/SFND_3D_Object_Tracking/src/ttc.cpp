@@ -105,7 +105,7 @@ double computeTTCLidarClusterBased(std::vector<LidarPoint> &lidarPointsPrev, std
 // Compute time-to-collision (TTC) based on keypoint correspondences in successive images
 double computeTTCCamera(std::vector<cv::KeyPoint> &kptsPrev, std::vector<cv::KeyPoint> &kptsCurr,
                         std::vector<cv::DMatch> kptMatches, double frameRate, cv::Mat *visImg) {
-    /* As explained in Lesson - xxx
+    /* As explained in Lesson 3 - Engineering a Collision Detection System
      * given the currnet frame, we compute all distances between all keypoint combinations, let these be h_curr^i
      * the same is done for the previous frame for the matched keypoints, let these be h_prev_i
      * Then, given the geometrical properties of the camera, the ratio h_curr_i/h_prev_i is proportional
