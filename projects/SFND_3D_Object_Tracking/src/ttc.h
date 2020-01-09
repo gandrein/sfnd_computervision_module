@@ -13,10 +13,10 @@ void evalTTC(LidarTtcMethod lidarTtcMethod, KptMatchesClusterConf kptClusterConf
 double computeTTCLidar(LidarTtcMethod ttcMethod, std::vector<LidarPoint> &lidarPointsPrev,
                        std::vector<LidarPoint> &lidarPointsCurr, double frameRate);
 
-double computeTTCLidarMedianBased(std::vector<LidarPoint> &lidarPointsPrev, std::vector<LidarPoint> &lidarPointsCurr,
-                                  double frameRate);
+double computeTTCLidarMedianBased(std::vector<double> &xLidarPrev, std::vector<double> &xLidarCurr,
+                                  double lidarFrameRate);
 
-double computeTTCLidarMeanBased(std::vector<LidarPoint> &lidarPointsPrev, std::vector<LidarPoint> &lidarPointsCurr,
+double computeTTCLidarMeanBased(std::vector<double> &xLidarPrev, std::vector<double> &xLidarCurr,
                                 double lidarFrameRate);
 
 double computeTTCLidarClusterBased(std::vector<LidarPoint> &lidarPointsPrev, std::vector<LidarPoint> &lidarPointsCurr,

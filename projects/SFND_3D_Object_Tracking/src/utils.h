@@ -20,6 +20,10 @@ void pushToBuffer(std::vector<DataFrame> &buffer, DataFrame &newFrame);
 
 bool isInsideROI(cv::KeyPoint &kpt, cv::Rect &rectangle);
 
+double computeMedian(std::vector<double> &vals);
+
+double computeMean(std::vector<double> &vals);
+
 void filterKeypointsNumber(DetectorMethod detector, std::vector<cv::KeyPoint> &keypoints, size_t maxNumber);
 
 NormalDistribution evalNormalDistributionParams(std::vector<double> &vals);

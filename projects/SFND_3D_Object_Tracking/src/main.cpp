@@ -37,7 +37,7 @@ int main(int argc, const char *argv[]) {
 	int descriptorMetricSel = static_cast<int>(DescriptorMetric::BINARY);
 	int matcherSelected = static_cast<int>(MatcherMethod::BRUTE_FORCE);
 	int nnMatcherSelected = static_cast<int>(NeighborSelectorMethod::kNN);
-	int lidarTtcMethodSel = static_cast<int>(LidarTtcMethod::MEAN);
+	int lidarTtcMethodSel = static_cast<int>(LidarTtcMethod::MEDIAN);
 
 	// Command line arguments are used for debugging
 	// Example
@@ -137,7 +137,7 @@ int main(int argc, const char *argv[]) {
 	LidarTtcMethod lidarTtcMethod = static_cast<LidarTtcMethod>(lidarTtcMethodSel);
 	KptMatchesClusterConf kptClusterConf;
 	kptClusterConf.method = KptMatchesClusterDistanceMethod::STDEV;
-	kptClusterConf.numStddev = 2;
+	kptClusterConf.numStddev = 1;
 
 	// camera dataset config
 	DataSetConfig imgDataInfo;
