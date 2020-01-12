@@ -8,7 +8,7 @@
 
 void evalTTC(LidarTtcMethod lidarTtcMethod, KptMatchesClusterConf kptClusterConfig, DataFrame &currFrame,
              DataFrame &prevFrame, cv::Mat &P_rect_00, cv::Mat &R_rect_00, cv::Mat &RT, double sensorFrameRate,
-             bool visualize);
+             bool showKeypointSelected, bool showTTCOnImage);
 
 double computeTTCLidar(LidarTtcMethod ttcMethod, std::vector<LidarPoint> &lidarPointsPrev,
                        std::vector<LidarPoint> &lidarPointsCurr, double frameRate);

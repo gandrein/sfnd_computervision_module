@@ -113,7 +113,7 @@ void show3DObjects(std::vector<BoundingBox> &boundingBoxes, cv::Size worldSize, 
 	}
 
 	// plot distance markers
-	float lineSpacing = 2.0;  // gap between distance markers
+	float lineSpacing = 1.0;  // gap between distance markers
 	int nMarkers = floor(worldSize.height / lineSpacing);
 	for (size_t i = 0; i < nMarkers; ++i) {
 		int y = (-(i * lineSpacing) * imageSize.height / worldSize.height) + imageSize.height;
@@ -124,7 +124,7 @@ void show3DObjects(std::vector<BoundingBox> &boundingBoxes, cv::Size worldSize, 
 	string windowName = "opencv: 3D Objects";
 	cv::namedWindow(windowName, cv::WINDOW_NORMAL);
 	cv::imshow(windowName, topviewImg);
-	cv::resizeWindow(windowName, 200, 200);  // need this for Arch i3 otherwise it is not shown properly
+	cv::resizeWindow(windowName, 400, 400);  // need this for Arch i3 otherwise it is not shown properly
 
 	while ((cv::waitKey() & 0xEFFFFF) != 27) {
 		continue;
@@ -182,11 +182,25 @@ void matchBoundingBoxes(DataFrame &currFrame, DataFrame &prevFrame) {
 			std::distance(prevFrameBoxMatchesIndex.begin(),
 						  std::max_element(prevFrameBoxMatchesIndex.begin(), prevFrameBoxMatchesIndex.end()));
 		if (prevFrameBoxMatchesIndex[boxIndex] != 0) {
+			// Insert only if element doesn't exist, hence don't overwrite.
+			// If operator[] is used, the element is overwritten!
+			// https://stackoverflow.com/questions/6952486/recommended-way-to-insert-elements-into-map
+
+			// If/else just for debugging
+			if (bbBestMatches.find(prevFrame.boundingBoxes[boxIndex].boxID) != bbBestMatches.end()) {
+				std::cout << " >>> Skipping ... currentBoxID (" << currBox.boxID
+						  << ") already associated with previousBoxID: " << prevFrame.boundingBoxes[boxIndex].boxID
+						  << std::endl;
+			} else {
+				std::cout << " >>> previousBoxID -> currentBoxID: " << prevFrame.boundingBoxes[boxIndex].boxID << " => "
+						  << currBox.boxID << std::endl;
+			}
+
 			bbBestMatches.insert({prevFrame.boundingBoxes[boxIndex].boxID, currBox.boxID});
-			std::cout << " >>> currentBoxID -> previousBoxID: " << currBox.boxID << " => "
-					  << prevFrame.boundingBoxes[boxIndex].boxID << std::endl;
+
 		} else {
-			std::cout << " >>> currentBoxID -> previousBoxID: " << currBox.boxID << " => NONE" << std::endl;
+			std::cout << " >>> previousBoxID -> currentBoxID: "
+					  << " NONE => " << currBox.boxID << std::endl;
 		}
 
 		if (debugPrintBoxAssociations) {
@@ -218,18 +232,24 @@ void matchBoundingBoxes(DataFrame &currFrame, DataFrame &prevFrame) {
 	std::cout << "#8 : TRACK 3D OBJECT BOUNDING BOXES done" << std::endl;
 }
 
-std::vector<cv::DMatch> getEnclosedMatches(BoundingBox &boundingBox, std::vector<cv::KeyPoint> &kptsPrev,
-										   std::vector<cv::KeyPoint> &kptsCurr, std::vector<cv::DMatch> &kptMatches) {
+std::vector<cv::DMatch> getValidEnclosedMatches(std::vector<cv::DMatch> &kptMatches,
+												std::vector<cv::KeyPoint> &kptsPrev,
+												std::vector<cv::KeyPoint> &kptsCurr, BoundingBox &prevBox,
+												BoundingBox &currBox) {
 	/* NOTE
 	 * A DMatch contains a query-index element and a train-index element, where
 	 *  - the keypoints in the initial (previous) frame are indexed by queryIdx
 	 *  - the keypoints in the current frame are indexed by trainIdx
+	 *
+	 * A keypoint match is consider valid enclosed if the current keypoint is inside the current
+	 * Bounding Box ROI and it's associated keypoint match is in the previous frame's Bounding Box ROI
 	 */
 	std::vector<cv::DMatch> enclosedMatches;
 	enclosedMatches.reserve(kptMatches.size());
 	for (auto &kptMatch : kptMatches) {
-		cv::KeyPoint curKeypoint = kptsCurr[kptMatch.trainIdx];
-		if (boundingBox.roi.contains(curKeypoint.pt)) {
+		cv::KeyPoint currKeypoint = kptsCurr[kptMatch.trainIdx];
+		cv::KeyPoint prevKeypoint = kptsPrev[kptMatch.queryIdx];
+		if (currBox.roi.contains(currKeypoint.pt) && prevBox.roi.contains(prevKeypoint.pt)) {
 			enclosedMatches.push_back(kptMatch);
 		}
 	}
@@ -253,12 +273,12 @@ std::vector<double> evalDistanceOfKptMatches(std::vector<cv::KeyPoint> &kptsPrev
 }
 
 // associate a given bounding box with the keypoints it contains
-void clusterKptMatchesWithROI(KptMatchesClusterConf clusterConf, BoundingBox &boundingBox,
-							  std::vector<cv::DMatch> &kptMatches, DataFrame &prevFrame, DataFrame &currFrame,
+void clusterKptMatchesWithROI(KptMatchesClusterConf clusterConf, std::vector<cv::DMatch> &kptMatches,
+							  DataFrame &prevFrame, DataFrame &currFrame, BoundingBox &prevBox, BoundingBox &currBox,
 							  bool visualize) {
 	std::cout << "#9 : Cluster keypoint matches with current bounding box" << std::endl;
 	std::vector<cv::DMatch> enclosedMatches =
-		getEnclosedMatches(boundingBox, prevFrame.keypoints, currFrame.keypoints, kptMatches);
+		getValidEnclosedMatches(kptMatches, prevFrame.keypoints, currFrame.keypoints, prevBox, currBox);
 
 	std::vector<double> distances = evalDistanceOfKptMatches(prevFrame.keypoints, currFrame.keypoints, enclosedMatches);
 	NormalDistribution normDist = evalNormalDistributionParams(distances);
@@ -270,7 +290,7 @@ void clusterKptMatchesWithROI(KptMatchesClusterConf clusterConf, BoundingBox &bo
 		switch (clusterConf.method) {
 			case KptMatchesClusterDistanceMethod::THRESHOLD:
 				if (dist < normDist.mean * clusterConf.threshold) {
-					boundingBox.kptMatches.emplace_back(kptMatch);
+					currBox.kptMatches.emplace_back(kptMatch);
 				}
 				break;
 			case KptMatchesClusterDistanceMethod::STDEV:
@@ -278,7 +298,7 @@ void clusterKptMatchesWithROI(KptMatchesClusterConf clusterConf, BoundingBox &bo
 				// In this scenario the data is selected based on the interval of standard-deviations, 1sigma, 2sigma, 3
 				// sigmas a value has to be within in order to be selected;
 				if (std::abs(dist - normDist.mean) < clusterConf.numStddev * normDist.stddev) {
-					boundingBox.kptMatches.emplace_back(kptMatch);
+					currBox.kptMatches.emplace_back(kptMatch);
 				}
 		}
 	}
@@ -291,7 +311,7 @@ void clusterKptMatchesWithROI(KptMatchesClusterConf clusterConf, BoundingBox &bo
 	std::cout << " >>> Min distance : " << *(std::min_element(std::begin(distances), std::end(distances))) << std::endl;
 	std::cout << " >>> Stddev between kptMatches (in current box): " << normDist.stddev << std::endl;
 
-	distances = evalDistanceOfKptMatches(prevFrame.keypoints, currFrame.keypoints, boundingBox.kptMatches);
+	distances = evalDistanceOfKptMatches(prevFrame.keypoints, currFrame.keypoints, currBox.kptMatches);
 	normDist = evalNormalDistributionParams(distances);
 
 	std::cout << " >>> After filtering:" << std::endl;
@@ -303,10 +323,10 @@ void clusterKptMatchesWithROI(KptMatchesClusterConf clusterConf, BoundingBox &bo
 	std::cout << " >>> "
 			  << " From total number of kpt matches: " << kptMatches.size() << ", #enclosed: " << enclosedMatches.size()
 			  << ", and "
-			  << " #selected: " << boundingBox.kptMatches.size() << std::endl;
+			  << " #selected: " << currBox.kptMatches.size() << std::endl;
 
 	if (visualize) {
 		drawMatches(enclosedMatches, currFrame, prevFrame, "matches beforeFiltering");
-		drawMatches(boundingBox.kptMatches, currFrame, prevFrame, "matches afterFiltering");
+		drawMatches(currBox.kptMatches, currFrame, prevFrame, "matches afterFiltering");
 	}
 }

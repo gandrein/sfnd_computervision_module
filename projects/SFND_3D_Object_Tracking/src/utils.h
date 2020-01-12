@@ -30,6 +30,8 @@ NormalDistribution evalNormalDistributionParams(std::vector<double> &vals);
 
 void showYoloDetectionOnImage(DataFrame &frameData, YoloConfig yoloConfig, std::string labelPostFix = "");
 
+void visualizeMatchedYoloBoundingBoxes(DataFrame &prev_frame, DataFrame &curr_frame);
+
 inline std::string DetectorMethodToString(const DetectorMethod &v) {
 	switch (v) {
 		case DetectorMethod::SHITOMASI:

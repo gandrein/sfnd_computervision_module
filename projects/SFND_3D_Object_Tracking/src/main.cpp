@@ -42,8 +42,7 @@ int main(int argc, const char *argv[]) {
 	// Command line arguments are used for debugging
 	// Example
 	/*
-	./3D_object_tracking --show-yolo 1 --show-front-object-fused 1  --show-keypoints 1 --show-keypoint-match 1
-	--limit-keypts 10
+	./3D_object_tracking --show-yolo 1 --show-front-object-fused 1  --show-keypoints 1 --show-keypoint-match 1 --limit-keypts 10
 	*/
 	try {
 		TCLAP::CmdLine cmdlineArg("2D features tracking");
@@ -137,7 +136,7 @@ int main(int argc, const char *argv[]) {
 	LidarTtcMethod lidarTtcMethod = static_cast<LidarTtcMethod>(lidarTtcMethodSel);
 	KptMatchesClusterConf kptClusterConf;
 	kptClusterConf.method = KptMatchesClusterDistanceMethod::STDEV;
-	kptClusterConf.numStddev = 1;
+	kptClusterConf.numStddev = 2;
 
 	// camera dataset config
 	DataSetConfig imgDataInfo;
@@ -190,7 +189,7 @@ int main(int argc, const char *argv[]) {
 		// Detect and classify objectst with YOLO
 		yoloConfig.confidenceThreshold = 0.2;
 		yoloConfig.nmsThreshold = 0.4;
-		detectObjects(*currentFrameIter, yoloConfig, false);
+		detectObjects(*currentFrameIter, yoloConfig, visualizeYolo);
 
 		// Load 3D Lidar points from file
 		std::string lidarFullFilename = lidarDataInfo.basePath + lidarDataInfo.prefix +
@@ -225,7 +224,7 @@ int main(int argc, const char *argv[]) {
 		 *  -> shrink factor - shrinks each bounding box by the given percentage to avoid 3D object merging at the edges
 		 * of an ROI
 		 */
-		float shrinkFactor = 0.10;
+		float shrinkFactor = 0.25;
 		clusterLidarWithROI(currentFrameIter->boundingBoxes, currentFrameIter->lidarPoints, shrinkFactor, P_rect_00,
 							R_rect_00, RT);
 
@@ -251,13 +250,15 @@ int main(int argc, const char *argv[]) {
 			matchBoundingBoxes(*currentFrameIter, *previousFrameIter);
 
 			if (visualizeYolo) {
-				showYoloDetectionOnImage(*currentFrameIter, yoloConfig, "current");
-				showYoloDetectionOnImage(*previousFrameIter, yoloConfig, "previous");
+				//
+				visualizeMatchedYoloBoundingBoxes(*previousFrameIter, *currentFrameIter);
+				// showYoloDetectionOnImage(*currentFrameIter, yoloConfig, "current");
+				// showYoloDetectionOnImage(*previousFrameIter, yoloConfig, "previous");
 			}
 
 			// compute TTC for object in front
 			evalTTC(lidarTtcMethod, kptClusterConf, *currentFrameIter, *previousFrameIter, P_rect_00, R_rect_00, RT,
-					sensorFrameRate, true);
+					sensorFrameRate, false, true);
 		}
 	}  // eof loop over all images
 

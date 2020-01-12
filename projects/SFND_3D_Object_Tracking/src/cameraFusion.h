@@ -11,12 +11,14 @@
 void clusterLidarWithROI(std::vector<BoundingBox> &boundingBoxes, std::vector<LidarPoint> &lidarPoints,
 						 float shrinkFactor, cv::Mat &P_rect_xx, cv::Mat &R_rect_xx, cv::Mat &RT);
 
-void clusterKptMatchesWithROI(KptMatchesClusterConf clusterConf, BoundingBox &boundingBox,
-							  std::vector<cv::DMatch> &kptMatches, DataFrame &prevFrame, DataFrame &currFrame,
+void clusterKptMatchesWithROI(KptMatchesClusterConf clusterConf, std::vector<cv::DMatch> &kptMatches,
+							  DataFrame &prevFrame, DataFrame &currFrame, BoundingBox &prevBox, BoundingBox &currBox,
 							  bool visualize);
 
-std::vector<cv::DMatch> getEnclosedMatches(BoundingBox &boundingBox, std::vector<cv::KeyPoint> &kptsPrev,
-										   std::vector<cv::KeyPoint> &kptsCurr, std::vector<cv::DMatch> &kptMatches);
+std::vector<cv::DMatch> getValidEnclosedMatches(std::vector<cv::DMatch> &kptMatches,
+												std::vector<cv::KeyPoint> &kptsPrev,
+												std::vector<cv::KeyPoint> &kptsCurr, BoundingBox &prevBox,
+												BoundingBox &currBox);
 
 std::vector<double> evalDistanceOfKptMatches(std::vector<cv::KeyPoint> &kptsPrev, std::vector<cv::KeyPoint> &kptsCurr,
 											 std::vector<cv::DMatch> &kptMatches);

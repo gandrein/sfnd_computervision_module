@@ -82,7 +82,7 @@ void showLidarTopview(std::vector<LidarPoint> &lidarPoints, cv::Size worldSize, 
 	}
 
 	// plot distance markers
-	float lineSpacing = 2.0;  // gap between distance markers
+	float lineSpacing = 1.0;  // gap between distance markers
 	int nMarkers = floor(worldSize.height / lineSpacing);
 	for (size_t i = 0; i < nMarkers; ++i) {
 		int y = (-(i * lineSpacing) * imageSize.height / worldSize.height) + imageSize.height;
