@@ -5,6 +5,7 @@
 #include "cameraFusion.h"
 #include "lidarData.h"
 #include "ttc.h"
+#include <algorithm>
 
 void evalTTC(LidarTtcMethod lidarTtcMethod, KptMatchesClusterConf kptClusterConfig, DataFrame &currFrame,
 			 DataFrame &prevFrame, cv::Mat &P_rect_00, cv::Mat &R_rect_00, cv::Mat &RT, double sensorFrameRate,
@@ -73,15 +74,16 @@ double computeTTCLidarMedianBased(std::vector<double> &xLidarPrev, std::vector<d
 								  double lidarFrameRate) {
 	double distance0 = computeMedian(xLidarPrev);
 	double distance1 = computeMedian(xLidarCurr);
+	// Some info output
 	std::cout << "  >>> Lidar TTC: estimated distance to preceeding vehicle: " << std::endl;
 	std::cout << "  >>> previous frame: " << distance0 << std::endl;
 	std::cout << "  >>> current  frame: " << distance1 << std::endl;
 
 	// Commpute TTC using the constant-velocity model
-	// TTC = d1 * delta_t / (d0 - d1)
+	// TTC = d1 * delta_T / (d0 - d1)
 	// where d0 and d1 are the distance to the detected front object in
-	//      the previous and the current frame respectively
-	// and  delta_t is 1/lidarFrameRate in our case.
+	// the previous and the current frame respectively
+	// and  delta_T is 1/lidarFrameRate in our case.
 	double ttc = distance1 / (lidarFrameRate * (distance0 - distance1));
 	return ttc;
 }
@@ -90,16 +92,19 @@ double computeTTCLidarMeanBased(std::vector<double> &xLidarPrev, std::vector<dou
 								double lidarFrameRate) {
 	double distance0 = computeMean(xLidarPrev);
 	double distance1 = computeMean(xLidarCurr);
+
+	// Commpute TTC using the constant-velocity model
+	// TTC = d1 * delta_T / (d0 - d1)
+	// where d0 and d1 are the distance to the detected front object in
+	// the previous and the current frame respectively
+	// and  delta_T is 1/lidarFrameRate in our case.
+	double ttc = distance1 / (lidarFrameRate * (distance0 - distance1));
+
+	// Some info output
 	std::cout << "  >>> Lidar TTC: estimated distance to preceeding vehicle: " << std::endl;
 	std::cout << "  >>> previous frame: " << distance0 << std::endl;
 	std::cout << "  >>> current  frame: " << distance1 << std::endl;
 
-	// Commpute TTC using the constant-velocity model
-	// TTC = d1 * delta_t / (d0 - d1)
-	// where d0 and d1 are the distance to the detected front object in
-	//      the previous and the current frame respectively
-	// and  delta_t is 1/lidarFrameRate in our case.
-	double ttc = distance1 / (lidarFrameRate * (distance0 - distance1));
 	return ttc;
 }
 
@@ -132,12 +137,12 @@ double computeTTCCamera(std::vector<cv::KeyPoint> &kptsPrev, std::vector<cv::Key
 			cv::KeyPoint kpInnerPrev = kptsPrev.at(it2->queryIdx);
 
 			// compute distances between keypoints in current frame and do the same for the previous frame
-			double distHcurr = cv::norm(kpOuterCurr.pt - kpInnerCurr.pt);
-			double distHprev = cv::norm(kpOuterPrev.pt - kpInnerPrev.pt);
+			double kptDistCurr = cv::norm(kpOuterCurr.pt - kpInnerCurr.pt);
+			double kptDistPrev = cv::norm(kpOuterPrev.pt - kpInnerPrev.pt);
 
 			// compute the distance ratios h_curr_i/h_prev_i and avoid division by zero
-			if (distHprev > std::numeric_limits<double>::epsilon() && distHcurr >= minDist) {
-				double distRatio = distHcurr / distHprev;
+			if (kptDistPrev > std::numeric_limits<double>::epsilon() && kptDistCurr >= minDist) {
+				double distRatio = kptDistCurr / kptDistPrev;
 				distRatios.push_back(distRatio);
 			}
 		}
@@ -151,18 +156,22 @@ double computeTTCCamera(std::vector<cv::KeyPoint> &kptsPrev, std::vector<cv::Key
 	}
 
 	// Commpute TTC using the constant-velocity model
-	// TTC = d1 * delta_t / (d0 - d1)
+	// 		TTC = d1 * delta_T / (d0 - d1)
 	// where d0 and d1 are the distance to the detected front object in
-	//      the previous and the current frame respectively
-	// and  delta_t is 1/lidarFrameRate in our case.
-	// use median of the data for distance computation
+	// the previous and the current frame respectively
+	// and  delta_T is 1/cameraFrameRate in our case.
+	// For camera this formula becomes
+	//		TTC = delta_T / (d0/d1 - 1)
+	// with d0/d1 inferred from the keypoint ratios
 
 	// Compute TTC using median of the data
-	// dT = 1 / frameRate;
+	// delta_T = 1 / frameRate;
 	double selectedRatio = computeMedian(distRatios);
-
-	std::cout << "  >>> Camera TTC: estimated distance ratio d_prev/d_curr: " << selectedRatio << std::endl;
-
 	ttc = 1 / (frameRate * (selectedRatio - 1));
+
+	// Some info
+	std::cout << "  >>> Camera TTC: distance ratio d_prev/d_curr" << std::endl;
+	std::cout << "	>>> current median: " << selectedRatio << std::endl;
+
 	return ttc;
 }

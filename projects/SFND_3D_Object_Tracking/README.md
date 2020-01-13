@@ -150,7 +150,7 @@ The tables below list the results for TTC computation for the 19 frames provided
 
 _**LIDAR TTC results**_
 
-|# FRAME  | TTC [s]  | min(x_p) [m]| min(x_c) [m]| median(x_p) [m]| median(x_c) [m]|
+|FRAME # | TTC [s]  | min(x_p) [m]| min(x_c) [m]| median(x_p) [m]| median(x_c) [m]|
 |:-------:|:--------:|:----------:|:-----------:|:-----------:|:-----------:|
 | 0       | N/A      |  N/A       | 7.97        |   N/A       |  8.072      |
 | 1       | 12.51    |   7.97     | 7.91        |   8.072     |  8.008      |
@@ -200,45 +200,38 @@ From the analysis of the 3Dview's:
 
 ## Results - TTC Camera
 
-The tables below list the results for TTC computation for the 19 frames provided from the KITTI data set using the camera mesurements only. The aforementioned constant velocity model and distance computation implementation are used.
+The tables below list the results for TTC computation for the 19 frames provided from the KITTI data set using the camera measurements only. For this example the FAST detector with the BRISK descriptor was used. An analysis of different descriptor/detector combinations is provided in the next section.
+
+The aforementioned constant velocity model and distance computation implementation are used. In the table `dist_ratio` denotes the value of `d0/d1` (previous-frame / current-frame distance as detailed in the lecture notes.
+
 
 _**Camera TTC results**_
 
-|#Image   | TTC [s]  | min(x_p) [m]| min(x_c) [m]| med(x_p) [m]| med(x_c) [m]|
-|:-------:|:--------:|:----------:|:-----------:|:-----------:|:-----------:|
-| 0       | N/A      |  N/A       |             |   N/A       |             |
-| 1       |          |            |             |             |             |
-| 2       |          |            |             |             |             |
-| 3       |          |            |             |             |             |
-| 4       |          |            |             |             |             |
-| 5       |          |            |             |             |             |
-| 6       |          |            |             |             |             |
-| 7       |          |            |             |             |             |
-| 8       |          |            |             |             |             |
-| 8       |          |            |             |             |             |
-| 10      |          |            |             |             |             |
-| 11      |          |            |             |             |             |
-| 12      |          |            |             |             |             |
-| 13      |          |            |             |             |             |
-| 14      |          |            |             |             |             |
-| 15      |          |            |             |             |             |
-| 16      |          |            |             |             |             |
-| 17      |          |            |             |             |             |
-| 18      |          |            |             |             |             |
+| FRAME # | TTC [s]  | median(dist_ratio) [m] |
+|:-------:|:-----:|:------------:|
+| 0       | N/A   | N/A   |
+| 1       | 12.40 |1.00807|
+| 2       | 12.52 |1.00798|
+| 3       | 14.29 |1.007  |
+| 4       | 12.85 |1.00778|
+| 5       | inf   |1      |
+| 6       | 14.25 |1.00702|
+| 7       | 14.33 |1.00698|
+| 8       | 12.87 |1.00821|
+| 8       | 12.71 |1.00787|
+| 10      | 14.82 |1.00675|
+| 11      | 13.36 |1.00748|
+| 12      | 13.70 |1.0073 |
+| 13      | 12.28 |1.00808|
+| 14      | 11.48 |1.00871|
+| 15      | 12.40 |1.00806|
+| 16      | 12.73 |1.00785|
+| 17      | 11.51 |1.00869|
+| 18      | 12.46 |1.00803|
 
-
-### Observations
-
-**TODO** make a table for camera:
- * each row is a frame
- * for each row show: ttc camera, ? distance ratios ??, same for median values
-
-
-**TODO** show a few cases where the keypoints in the images are off
-
+The results from camera TTC are less intuitive. As long as the ratio is larger than 1, it means that the estimated current distance is less then the previous estimated distance (`d0/d1 > 1` => `d0 > d1`). However, given the overall TTC values, the TTC computation based on this descriptor/detector combination doesn't seem to be very consistent nor in line with the Lidar results.
 
 ### Keypoint Detector/Descriptor Performance
-
 
 ### Recommendations
 
