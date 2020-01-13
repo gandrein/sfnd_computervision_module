@@ -79,6 +79,7 @@ void show3DObjects(std::vector<BoundingBox> &boundingBoxes, cv::Size worldSize, 
 		// plot Lidar points into top view image
 		int top = 1e8, left = 1e8, bottom = 0.0, right = 0.0;
 		float xwmin = 1e8, ywmin = 1e8, ywmax = -1e8;
+		std::vector<double> xVals;
 		for (auto it2 = it1->lidarPoints.begin(); it2 != it1->lidarPoints.end(); ++it2) {
 			// world coordinates
 			float xw = (*it2).x;  // world position in m with x facing forward from sensor
@@ -99,8 +100,21 @@ void show3DObjects(std::vector<BoundingBox> &boundingBoxes, cv::Size worldSize, 
 
 			// draw individual point
 			cv::circle(topviewImg, cv::Point(x, y), 4, currColor, -1);
+
+			xVals.push_back((*it2).x);
 		}
 
+		// Draw the median X distance point from all the points inside the ROI box
+		double medianX = computeMedian(xVals);
+		if (medianX > 0.1) { // for our case (preceeding vehicle), show only if distance is bigger than 0.1
+			// Need to convert from world coordinates to image pixel
+			int yMed = (-medianX * imageSize.height / worldSize.height) + imageSize.height;
+			// for image X we use the middle of the bounding box
+			double yCenter = ywmin + (ywmax - ywmin)/2;
+			int xMed = (-yCenter * imageSize.width / worldSize.width) + imageSize.width / 2;
+			std::cout << "show3DObjects: Median x in ROI is: " << medianX << std::endl;
+			cv::circle(topviewImg, cv::Point(xMed, yMed), 6, cv::Scalar(255, 255, 0), -1);
+		}
 		// draw enclosing rectangle
 		cv::rectangle(topviewImg, cv::Point(left, top), cv::Point(right, bottom), cv::Scalar(0, 0, 0), 2);
 
@@ -124,7 +138,7 @@ void show3DObjects(std::vector<BoundingBox> &boundingBoxes, cv::Size worldSize, 
 	string windowName = "opencv: 3D Objects";
 	cv::namedWindow(windowName, cv::WINDOW_NORMAL);
 	cv::imshow(windowName, topviewImg);
-	cv::resizeWindow(windowName, 400, 400);  // need this for Arch i3 otherwise it is not shown properly
+	// cv::resizeWindow(windowName, 00, 800);  // need this for Arch i3 otherwise it is not shown properly
 
 	while ((cv::waitKey() & 0xEFFFFF) != 27) {
 		continue;

@@ -146,11 +146,11 @@ The evaluation of the TTC  is done in the `computeTTCCamera` function in the `sr
 
 ## Results - TTC Lidar
 
-The tables below list the results for TTC computation for the 19 frames provided from the KITTI data set using the lidar mesurements only. The aforementioned constant velocity model and distance computation implementation are used.
+The tables below list the results for TTC computation for the 19 frames provided from the KITTI data set using the lidar mesurements only. The aforementioned constant velocity model and distance computation implementation are used. In the table `_c` subscripts stands for `current` and `_p` subscript stands for `previous`.
 
 _**LIDAR TTC results**_
 
-|#Image   | TTC [s]  | min(x_p) [m]| min(x_c) [m]| med(x_p) [m]| med(x_c) [m]|
+|# FRAME  | TTC [s]  | min(x_p) [m]| min(x_c) [m]| median(x_p) [m]| median(x_c) [m]|
 |:-------:|:--------:|:----------:|:-----------:|:-----------:|:-----------:|
 | 0       | N/A      |  N/A       | 7.97        |   N/A       |  8.072      |
 | 1       | 12.51    |   7.97     | 7.91        |   8.072     |  8.008      |
@@ -174,7 +174,7 @@ _**LIDAR TTC results**_
 
 ### Observations
 
-The plot below shows the minimum X distance (`min(X_c)`) for all frame versus the medium X distance (`med(x_c)`). As the plot shows, the median distance is a better estimate of the distance as it is less subjected to noise in the measurment data.
+The plot below shows the minimum X distance (`min(X_c)`) for all frame versus the medium X distance (`median(x_c)`). As the plot shows, the median distance is a better estimate of the distance as it is less subjected to noise in the measurment data.
 
 <img src="docs/readme_images/results/lidarPrecedingVehicleDistance.png" width="600" height="400" />
 
@@ -182,10 +182,21 @@ The plot below shows the TTC from the table above per frame. Although the median
 
 <img src="docs/readme_images/results/lidarTTCresult.png" width="600" height="400" />
 
-The following instance are cases where the lidar measurement seems to be inconsistent:
-* between the 4th and the 3rd frame, the detected distance seems to increase. This causes a sharp increase in the TTC.
+The following instance are cases where the lidar measurement seems to be inconsistent. In the 3Dview object representation below, the x-position of the median point used for TTC computation is shown as a circle of cyan color.
 
-16 -has visible outlier
+| FRAME #|  TTC  [s] |         |
+|:-------:|:--------:|:--------:|
+| 2  | 11.51 | <img src="docs/readme_images/results/3rd_frame_3dobjectview.png" width="800" height="250" /> |
+| 3  | 15.78 | <img src="docs/readme_images/results/4th_frame_3dobjectview.png" width="800" height="250" /> |
+| 4  | 16.68 | <img src="docs/readme_images/results/5th_frame_3dobjectview.png" width="800" height="250" /> |
+| 14 | 9.59 | <img src="docs/readme_images/results/15th_frame_3dobjectview.png" width="800" height="250" /> |
+| 16 | 10.2 | <img src="docs/readme_images/results/17th_frame_3dobjectview.png" width="800" height="250" /> |
+
+From the analysis of the 3Dview's:
+* in FRAME #3 frame, the points have a bigger spread with more outliers on the edges as compared for example with the previous distribution from FRAME #2. This causes the median to be estimated further from the tailgate and more inside the point cloud which leads to a sudden increase in the TTC value. The blue line crossing the ROI box is the 8 [m] estimate which shows that the shift in the vehicle position is not as pronounced as the TTC estimate.
+* in FRAME #4, the spread is further increased due to the single outlier in front of the tailgate (probably unfiltered ground plane point). This creates a further increase in the TTC.
+* in FRAME #16, the data is slightly more spread than preceding instances (e.g. FRAME #14) with a visible outlier well in front of the tailgate, causing again a shift of the detected median point further from the tailgate.
+
 
 ## Results - TTC Camera
 

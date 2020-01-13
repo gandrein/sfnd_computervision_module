@@ -231,7 +231,7 @@ int main(int argc, const char *argv[]) {
 
 		// Visualize 3D objects
 		if (visualizeFusedData) {
-			show3DObjects(currentFrameIter->boundingBoxes, cv::Size(10.0, 25.0), cv::Size(2000, 2000),
+			show3DObjects(currentFrameIter->boundingBoxes, cv::Size(10.0, 12.0), cv::Size(2000, 2000),
 						  visualizeFusedData);
 		}
 
