@@ -73,8 +73,9 @@ double computeTTCLidarMedianBased(std::vector<double> &xLidarPrev, std::vector<d
 								  double lidarFrameRate) {
 	double distance0 = computeMedian(xLidarPrev);
 	double distance1 = computeMedian(xLidarCurr);
-	std::cout << "  >>> Lidar TTC: estimated distance to preceeding vehicle: " << distance1 << std::endl;
-	std::cout << "  >>> Lidar TTC: estimated distance change (d0 - d1): " << (distance0 - distance1) << std::endl;
+	std::cout << "  >>> Lidar TTC: estimated distance to preceeding vehicle: " << std::endl;
+	std::cout << "  >>> previous frame: " << distance0 << std::endl;
+	std::cout << "  >>> current  frame: " << distance1 << std::endl;
 
 	// Commpute TTC using the constant-velocity model
 	// TTC = d1 * delta_t / (d0 - d1)
@@ -89,8 +90,9 @@ double computeTTCLidarMeanBased(std::vector<double> &xLidarPrev, std::vector<dou
 								double lidarFrameRate) {
 	double distance0 = computeMean(xLidarPrev);
 	double distance1 = computeMean(xLidarCurr);
-	std::cout << "  >>> Lidar TTC: estimated distance to preceeding vehicle: " << distance1 << std::endl;
-	std::cout << "  >>> Lidar TTC: estimated distance change (d0 - d1): " << (distance0 - distance1) << std::endl;
+	std::cout << "  >>> Lidar TTC: estimated distance to preceeding vehicle: " << std::endl;
+	std::cout << "  >>> previous frame: " << distance0 << std::endl;
+	std::cout << "  >>> current  frame: " << distance1 << std::endl;
 
 	// Commpute TTC using the constant-velocity model
 	// TTC = d1 * delta_t / (d0 - d1)

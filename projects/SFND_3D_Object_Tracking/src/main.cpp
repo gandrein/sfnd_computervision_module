@@ -175,6 +175,7 @@ int main(int argc, const char *argv[]) {
 	/* MAIN LOOP OVER ALL IMAGES */
 	for (size_t imgIndex = 0; imgIndex <= imgDataInfo.endIndex - imgDataInfo.startIndex;
 		 imgIndex += imgDataInfo.indexStepSize) {
+		std::cout << "FRAME NUMBER: " << imgIndex << std::endl;
 		// Assemble filenames for current index
 		std::string imgFullFilename = getDatasetImageName(imgDataInfo, imgIndex);
 		// Load image from file

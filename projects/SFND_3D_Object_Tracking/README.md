@@ -1,6 +1,6 @@
 # SFND 3D Object Tracking
 
-<img src="docs/readme_images/keypoints.png" width="820" height="248" />
+<img src="docs/readme_images/ttc_result_example.png" width="820" height="248" />
 
 This project focuses on computing Time-To-Collision (TTC) estimates for a tracked object preceding our vehicle. The goal is to use lidar and camera data to detect and track preceding vehicles. This is achieved by using feature detection methods to detect, describe and track keypoints between successive images, the YOLO deep-learning framework to detect vehicles and associate them with the features. Finally lidar points in 3D space are used to build a fused tracking system.
 
@@ -144,36 +144,84 @@ Finally, the distance to the preceding vehicle is estimated taking the median of
 
 The evaluation of the TTC  is done in the `computeTTCCamera` function in the `src/ttc.cpp` file and computation of the median is performed in `computeMedian.cpp` which can be found in `src/utils.cpp`. The filtering and keypoint association is implemented in `clusterKptMatchesWithROI` function inside the `src/cameraFusion.cpp` file.
 
-## Results
+## Results - TTC Lidar
 
-The tables below list the results for TTC computation for the 19 frames provided from the KITTI data set, for lidar TTC and camera TTC respectively, using the aforementioned constant velocity model and distance computation implementations.
+The tables below list the results for TTC computation for the 19 frames provided from the KITTI data set using the lidar mesurements only. The aforementioned constant velocity model and distance computation implementation are used.
 
 _**LIDAR TTC results**_
 
-|#Image   | TTC   | min(X_p)| min(X_c)| med(X_p)| med(X_c)|
-|:-------:|:------:|:------:|:-------:|:-------:|:-------:|
-| 0       | 127    | 50     | 162     |     254 |     119 |
+|#Image   | TTC [s]  | min(x_p) [m]| min(x_c) [m]| med(x_p) [m]| med(x_c) [m]|
+|:-------:|:--------:|:----------:|:-----------:|:-----------:|:-----------:|
+| 0       | N/A      |  N/A       | 7.97        |   N/A       |  8.072      |
+| 1       | 12.51    |   7.97     | 7.91        |   8.072     |  8.008      |
+| 2       | 11.51    |   7.91     | 7.85        |   8.008     |  7.939      |
+| 3       | 15.78    |   7.85     | 7.79        |   7.939     |  7.889      |
+| 4       | 16.68    |   7.79     | 7.68        |   7.889     |  7.842      |
+| 5       | 15.28    |   7.68     | 7.64        |   7.842     |  7.79       |
+| 6       | 12.67    |   7.64     | 7.58        |   7.79      |  7.73       |
+| 7       | 11.98    |   7.58     | 7.65        |   7.73      |  7.66       |
+| 8       | 13.35    |   7.65     | 7.51        |   7.66      |  7.61       |
+| 8       | 13.02    |   7.51     | 7.47        |   7.61      |  7.55       |
+| 10      | 11.34    |   7.47     | 7.39        |   7.55      |  7.49       |
+| 11      | 12.59    |   7.39     | 7.20        |   7.49      |  7.43       |
+| 12      | 8.90     |   7.20     | 7.27        |   7.43      |  7.34       |
+| 13      | 9.63     |   7.27     | 7.19        |   7.34      |  7.27       |
+| 14      | 9.59     |   7.19     | 7.13        |   7.27      |  7.19       |
+| 15      | 8.26     |   7.13     | 7.04        |   7.19      |  7.11       |
+| 16      | 10.20    |   7.04     | 6.83        |   7.11      |  7.04       |
+| 17      | 9.95     |   6.83     | 6.90        |   7.04      |  6.97       |
+| 18      | 8.40     |   6.90     | 6.81        |   6.97      |  6.89       |
 
+### Observations
+
+The plot below shows the minimum X distance (`min(X_c)`) for all frame versus the medium X distance (`med(x_c)`). As the plot shows, the median distance is a better estimate of the distance as it is less subjected to noise in the measurment data.
+
+<img src="docs/readme_images/results/lidarPrecedingVehicleDistance.png" width="600" height="400" />
+
+The plot below shows the TTC from the table above per frame. Although the median distance is a better approximate of the distance, taking the difference between previous and current distance measurement, amplifies any inconsistency and the resulting TTC is not monotonically decreasing.
+
+<img src="docs/readme_images/results/lidarTTCresult.png" width="600" height="400" />
+
+The following instance are cases where the lidar measurement seems to be inconsistent:
+* between the 4th and the 3rd frame, the detected distance seems to increase. This causes a sharp increase in the TTC.
+
+16 -has visible outlier
+
+## Results - TTC Camera
+
+The tables below list the results for TTC computation for the 19 frames provided from the KITTI data set using the camera mesurements only. The aforementioned constant velocity model and distance computation implementation are used.
 
 _**Camera TTC results**_
 
-|#Image   | TTC   | min(X_p)| min(X_c)| med(X_p)| med(X_c)|
-|:-------:|:------:|:------:|:-------:|:-------:|:-------:|
-| 0       | 127    | 50     | 162     |     254 |     119 |
+|#Image   | TTC [s]  | min(x_p) [m]| min(x_c) [m]| med(x_p) [m]| med(x_c) [m]|
+|:-------:|:--------:|:----------:|:-----------:|:-----------:|:-----------:|
+| 0       | N/A      |  N/A       |             |   N/A       |             |
+| 1       |          |            |             |             |             |
+| 2       |          |            |             |             |             |
+| 3       |          |            |             |             |             |
+| 4       |          |            |             |             |             |
+| 5       |          |            |             |             |             |
+| 6       |          |            |             |             |             |
+| 7       |          |            |             |             |             |
+| 8       |          |            |             |             |             |
+| 8       |          |            |             |             |             |
+| 10      |          |            |             |             |             |
+| 11      |          |            |             |             |             |
+| 12      |          |            |             |             |             |
+| 13      |          |            |             |             |             |
+| 14      |          |            |             |             |             |
+| 15      |          |            |             |             |             |
+| 16      |          |            |             |             |             |
+| 17      |          |            |             |             |             |
+| 18      |          |            |             |             |             |
 
-**TODO** make a table for lidar:
- * each row is a frame
- * for each row show: ttc lidar, min x distance current frame, min x distance previous frame, same for median values
 
+### Observations
 
 **TODO** make a table for camera:
  * each row is a frame
  * for each row show: ttc camera, ? distance ratios ??, same for median values
 
-
-### Observations
-
-**TODO** show a few cases of lidar median being off
 
 **TODO** show a few cases where the keypoints in the images are off
 
