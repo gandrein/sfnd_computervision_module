@@ -1,4 +1,4 @@
-FROM hrilab/ubuntu-18.04-opengl-base
+FROM codookie/ubuntu-18.04-opengl-base
 
 MAINTAINER Andrei Gherghescu <andrei.gherghescu@esa.int>
 
